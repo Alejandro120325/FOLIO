@@ -350,10 +350,10 @@ section{position:relative;z-index:1}
     overflow:hidden;
     background-color:var(--surface);
     background-image:
-        radial-gradient(ellipse 130% 120% at 50% 50%, transparent 50%, rgba(0,0,0,.22) 100%),
-        radial-gradient(ellipse 80% 50% at 12% 0%, rgba(125,70,200,.13) 0%, transparent 62%),
-        radial-gradient(ellipse 70% 50% at 90% 100%, rgba(201,168,76,.10) 0%, transparent 65%),
-        radial-gradient(ellipse 110% 80% at 50% 50%, rgba(40,20,80,.18) 0%, transparent 70%);
+            radial-gradient(ellipse 130% 120% at 50% 50%, transparent 50%, rgba(0,0,0,.22) 100%),
+            radial-gradient(ellipse 80% 50% at 12% 0%, rgba(125,70,200,.13) 0%, transparent 62%),
+            radial-gradient(ellipse 70% 50% at 90% 100%, rgba(201,168,76,.10) 0%, transparent 65%),
+            radial-gradient(ellipse 110% 80% at 50% 50%, rgba(40,20,80,.18) 0%, transparent 70%);
 }
 .cat-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:1.2rem}
 
@@ -538,10 +538,10 @@ section{position:relative;z-index:1}
     overflow:hidden;
     background-color:var(--deep);
     background-image:
-        radial-gradient(ellipse 90% 45% at 50% 0%, rgba(201,168,76,.13) 0%, transparent 70%),
-        radial-gradient(ellipse 60% 45% at 0% 75%, rgba(160,80,40,.10) 0%, transparent 70%),
-        radial-gradient(ellipse 60% 45% at 100% 75%, rgba(160,80,40,.10) 0%, transparent 70%),
-        linear-gradient(180deg, rgba(20,15,10,.4) 0%, transparent 30%, transparent 70%, rgba(10,8,5,.5) 100%);
+            radial-gradient(ellipse 90% 45% at 50% 0%, rgba(201,168,76,.13) 0%, transparent 70%),
+            radial-gradient(ellipse 60% 45% at 0% 75%, rgba(160,80,40,.10) 0%, transparent 70%),
+            radial-gradient(ellipse 60% 45% at 100% 75%, rgba(160,80,40,.10) 0%, transparent 70%),
+            linear-gradient(180deg, rgba(20,15,10,.4) 0%, transparent 30%, transparent 70%, rgba(10,8,5,.5) 100%);
 }
 .new-releases::before{
     content:'';position:absolute;left:0;right:0;top:0;height:1px;
@@ -574,11 +574,11 @@ section{position:relative;z-index:1}
     overflow:hidden;
     background-color:var(--surface2);
     background-image:
-        radial-gradient(ellipse 130% 120% at 50% 50%, transparent 55%, rgba(0,0,0,.20) 100%),
-        radial-gradient(ellipse 70% 55% at 50% 50%, rgba(201,168,76,.13) 0%, transparent 60%),
-        radial-gradient(ellipse 100% 70% at 50% 100%, rgba(80,40,140,.12) 0%, transparent 70%),
-        radial-gradient(ellipse 60% 50% at 0% 0%, rgba(40,30,80,.10) 0%, transparent 65%),
-        radial-gradient(ellipse 60% 50% at 100% 0%, rgba(40,30,80,.10) 0%, transparent 65%);
+            radial-gradient(ellipse 130% 120% at 50% 50%, transparent 55%, rgba(0,0,0,.20) 100%),
+            radial-gradient(ellipse 70% 55% at 50% 50%, rgba(201,168,76,.13) 0%, transparent 60%),
+            radial-gradient(ellipse 100% 70% at 50% 100%, rgba(80,40,140,.12) 0%, transparent 70%),
+            radial-gradient(ellipse 60% 50% at 0% 0%, rgba(40,30,80,.10) 0%, transparent 65%),
+            radial-gradient(ellipse 60% 50% at 100% 0%, rgba(40,30,80,.10) 0%, transparent 65%);
 }
 .newsletter::before{content:'FOLIO';position:absolute;font-family:var(--serif);font-size:18rem;font-weight:800;color:rgba(201,168,76,.035);top:-3rem;right:-1.5rem;pointer-events:none;white-space:nowrap;font-style:italic;letter-spacing:-0.02em;z-index:0}
 .newsletter-inner{max-width:580px;margin:0 auto;text-align:center;position:relative;z-index:1}

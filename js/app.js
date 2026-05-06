@@ -8,62 +8,149 @@ let API_LOADED = false;
 try { cart = JSON.parse(localStorage.getItem('folio-cart') || '[]'); } catch(e){ cart=[]; }
 try { wishlist = JSON.parse(localStorage.getItem('folio-wishlist') || '[]'); } catch(e){ wishlist=[]; }
 
-// ══ AUTH SYSTEM ══════════════════════════════════════════════════
+// ══ AUTH SYSTEM (backend real con JWT + 3 roles) ═════════════════
 const Auth = {
-    user: null, isLoggedIn: false,
-    init() { try { const s = localStorage.getItem('folio-user'); if (s) { this.user = JSON.parse(s); this.isLoggedIn = true; } } catch(e){} },
-    login(email, pass) { if (!email || !pass || pass.length < 4) return false; this.user = { email, name: email.split('@')[0] }; this.isLoggedIn = true; localStorage.setItem('folio-user', JSON.stringify(this.user)); return true; },
-    register(name, email, pass) { if (!name || !email || !pass || pass.length < 6) return false; this.user = { email, name }; this.isLoggedIn = true; localStorage.setItem('folio-user', JSON.stringify(this.user)); return true; },
-    logout() { this.user = null; this.isLoggedIn = false; localStorage.removeItem('folio-user'); }
+    get user()       { return window.FolioBackend?.currentUser() || null; },
+    get isLoggedIn() { return !!this.user; },
+    get role()       { return this.user?.role || null; }
 };
 
 function openAuth(tab = 'login') {
     document.getElementById('auth-overlay').classList.add('open');
     document.getElementById('auth-modal').classList.add('open');
-    switchAuthTab(tab); document.body.style.overflow = 'hidden';
+    switchAuthTab(tab);
+    document.body.style.overflow = 'hidden';
 }
+
 function closeAuth() {
     document.getElementById('auth-overlay').classList.remove('open');
     document.getElementById('auth-modal').classList.remove('open');
     document.body.style.overflow = '';
 }
+
 function switchAuthTab(tab) {
     document.getElementById('tab-login').classList.toggle('active', tab === 'login');
     document.getElementById('tab-register').classList.toggle('active', tab === 'register');
-    document.getElementById('auth-login-form').style.display = tab === 'login' ? 'block' : 'none';
+    document.getElementById('auth-login-form').style.display    = tab === 'login'    ? 'block' : 'none';
     document.getElementById('auth-register-form').style.display = tab === 'register' ? 'block' : 'none';
     document.getElementById('auth-login-err').textContent = '';
     document.getElementById('auth-reg-err').textContent = '';
 }
-function handleLogin() {
+
+// REDIRECCIÓN MÁGICA Y LOGIN INTELIGENTE
+async function handleLogin() {
     const email = document.getElementById('login-email').value.trim();
-    const pass = document.getElementById('login-pass').value;
-    if (!email || !pass) { document.getElementById('auth-login-err').textContent = 'Completa todos los campos.'; return; }
-    if (Auth.login(email, pass)) { closeAuth(); updateAuthUI(); showToast(`¡Bienvenido de vuelta, ${Auth.user.name}!`); }
-    else { document.getElementById('auth-login-err').textContent = 'Credenciales inválidas.'; }
+    const pass  = document.getElementById('login-pass').value;
+    const err   = document.getElementById('auth-login-err');
+    err.textContent = '';
+
+    if (!email || !pass) { err.textContent = 'Completa todos los campos.'; return; }
+
+    // Mostramos feedback visual mientras conecta
+    err.style.color = 'var(--gold)';
+    err.textContent = 'Verificando credenciales...';
+
+    try {
+        const user = await FolioBackend.login(email, pass);
+        closeAuth(); updateAuthUI();
+
+        // 🔮 Redirección inteligente
+        if (user.role === 'admin') {
+            showToast(`¡Bienvenido al Panel de Control, ${user.name}!`);
+            setTimeout(() => { if(window.Admin) Admin.open(); }, 300);
+        } else if (user.role === 'employee') {
+            showToast(`¡Hola, ${user.name}! Panel de empleado abierto.`);
+            setTimeout(() => { if(window.Employee) Employee.open(); }, 300);
+        } else {
+            showToast(`¡Bienvenido, ${user.name}!`);
+            scrollToBooks();
+        }
+    } catch (e) {
+        err.style.color = '#e05555';
+        err.textContent = e.message || 'Credenciales inválidas o servidor inactivo.';
+    }
 }
-function handleRegister() {
-    const name = document.getElementById('reg-name').value.trim();
+
+async function handleRegister() {
+    const name  = document.getElementById('reg-name').value.trim();
     const email = document.getElementById('reg-email').value.trim();
-    const pass = document.getElementById('reg-pass').value;
-    if (!name || !email || !pass) { document.getElementById('auth-reg-err').textContent = 'Completa todos los campos.'; return; }
-    if (pass.length < 6) { document.getElementById('auth-reg-err').textContent = 'La contraseña debe tener al menos 6 caracteres.'; return; }
-    if (Auth.register(name, email, pass)) { closeAuth(); updateAuthUI(); showToast(`¡Cuenta creada! Bienvenido, ${name}!`); }
-    else { document.getElementById('auth-reg-err').textContent = 'Error al crear la cuenta.'; }
+    const pass  = document.getElementById('reg-pass').value;
+    const err   = document.getElementById('auth-reg-err');
+    err.textContent = '';
+
+    if (!name || !email || !pass) { err.textContent = 'Completa todos los campos.'; return; }
+    if (pass.length < 6) { err.textContent = 'La contraseña debe tener al menos 6 caracteres.'; return; }
+
+    err.style.color = 'var(--gold)';
+    err.textContent = 'Creando cuenta...';
+
+    try {
+        const user = await FolioBackend.register(name, email, pass);
+        closeAuth(); updateAuthUI();
+        showToast(`¡Cuenta creada! Bienvenido, ${user.name}.`);
+    } catch (e) {
+        err.style.color = '#e05555';
+        err.textContent = e.message || 'No se pudo crear la cuenta.';
+    }
 }
-function handleLogout() { Auth.logout(); updateAuthUI(); showToast('Sesión cerrada. ¡Hasta pronto!'); }
+
+function handleLogout() {
+    window.FolioBackend?.logout();
+    updateAuthUI();
+    showToast('Sesión cerrada. ¡Hasta pronto!');
+}
+
 function updateAuthUI() {
-    const out = document.getElementById('auth-logged-out'), inn = document.getElementById('auth-logged-in');
-    if (Auth.isLoggedIn && Auth.user) {
+    const out = document.getElementById('auth-logged-out');
+    const inn = document.getElementById('auth-logged-in');
+    const u = Auth.user;
+    if (u) {
         out.style.display = 'none'; inn.style.display = 'flex';
-        document.getElementById('auth-avatar').textContent = Auth.user.name[0].toUpperCase();
-        document.getElementById('auth-username').textContent = Auth.user.name.substring(0, 12);
-    } else { out.style.display = 'flex'; inn.style.display = 'none'; }
+        document.getElementById('auth-avatar').textContent = (u.name || u.email)[0].toUpperCase();
+        document.getElementById('auth-username').textContent = (u.name || u.email).substring(0, 14);
+        const chip = document.getElementById('auth-role-chip');
+        if (chip) {
+            chip.textContent = u.role === 'admin' ? 'admin' : u.role === 'employee' ? 'empleado' : '';
+            chip.style.display = u.role === 'client' ? 'none' : 'inline-flex';
+            chip.className = 'auth-role-chip role-' + u.role;
+        }
+        const adm = document.getElementById('menu-admin');
+        const emp = document.getElementById('menu-employee');
+        if (adm) adm.style.display = u.role === 'admin' ? 'block' : 'none';
+        if (emp) emp.style.display = (u.role === 'employee' || u.role === 'admin') ? 'block' : 'none';
+    } else {
+        out.style.display = 'flex'; inn.style.display = 'none';
+    }
 }
-function openUserMenu() {
+
+function openUserMenu(e) {
+    if (e) e.stopPropagation();
     const d = document.getElementById('user-dropdown');
-    d.style.opacity = d.style.opacity === '1' ? '0' : '1';
-    d.style.pointerEvents = d.style.pointerEvents === 'all' ? 'none' : 'all';
+    const open = d.classList.toggle('open');
+    if (open) {
+        const closer = (ev) => {
+            if (!d.contains(ev.target)) { d.classList.remove('open'); document.removeEventListener('click', closer); }
+        };
+        setTimeout(() => document.addEventListener('click', closer), 0);
+    }
+}
+
+// ══ MOBILE NAV ═══════════════════════════════════════════════════
+function toggleMobileNav() {
+    const nav = document.getElementById('main-nav');
+    const links = document.getElementById('nav-links');
+    const burger = document.getElementById('nav-burger');
+    const open = !nav.classList.contains('mobile-open');
+    nav.classList.toggle('mobile-open', open);
+    links.classList.toggle('mobile-open', open);
+    burger.classList.toggle('active', open);
+    burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+function closeMobileNav() {
+    document.getElementById('main-nav')?.classList.remove('mobile-open');
+    document.getElementById('nav-links')?.classList.remove('mobile-open');
+    document.getElementById('nav-burger')?.classList.remove('active');
+    document.getElementById('nav-burger')?.setAttribute('aria-expanded', 'false');
 }
 
 // ══ THEME ════════════════════════════════════════════════════════
@@ -82,15 +169,15 @@ function renderStars(r) {
 }
 function disc(p,o){ return Math.round((1-p/o)*100); }
 
-// Genera todas las URLs de portada candidatas (ISBN → OLID → cover_id)
-// con ?default=false para que Open Library devuelva 404 en lugar de placeholder.
+// Genera todas las URLs de portada candidatas
 function _coverCandidates(bookOrIsbn, sz='M') {
     const base = 'https://covers.openlibrary.org/b';
     if (bookOrIsbn && typeof bookOrIsbn === 'object') {
         const out = [];
-        if (bookOrIsbn.isbn)    out.push(`${base}/isbn/${bookOrIsbn.isbn}-${sz}.jpg?default=false`);
-        if (bookOrIsbn.olid)    out.push(`${base}/olid/${bookOrIsbn.olid}-${sz}.jpg?default=false`);
-        if (bookOrIsbn.coverId) out.push(`${base}/id/${bookOrIsbn.coverId}-${sz}.jpg?default=false`);
+        if (bookOrIsbn.cover_url) out.push(bookOrIsbn.cover_url);
+        if (bookOrIsbn.isbn)      out.push(`${base}/isbn/${bookOrIsbn.isbn}-${sz}.jpg?default=false`);
+        if (bookOrIsbn.olid)      out.push(`${base}/olid/${bookOrIsbn.olid}-${sz}.jpg?default=false`);
+        if (bookOrIsbn.coverId)   out.push(`${base}/id/${bookOrIsbn.coverId}-${sz}.jpg?default=false`);
         return out;
     }
     return bookOrIsbn ? [`${base}/isbn/${bookOrIsbn}-${sz}.jpg?default=false`] : [];
@@ -109,7 +196,6 @@ function bookImg(bookOrIsbn, cls, sz='M') {
     return `<img class="${cls}" src="${list[0]}"${fbAttr} loading="lazy" alt="" onload="this.style.opacity=1" onerror="folioCoverFallback(this)">`;
 }
 
-// Handler global: cuando una portada falla, prueba la siguiente del array data-cover-fb.
 window.folioCoverFallback = function(img) {
     let fb = [];
     try { fb = JSON.parse((img.dataset.coverFb || '[]').replace(/&apos;/g, "'")); } catch(e) {}
@@ -124,6 +210,7 @@ window.folioCoverFallback = function(img) {
 // ══ RENDER LIBROS ════════════════════════════════════════════════
 function renderBooks() {
     const grid = document.getElementById('books-grid');
+    if(!grid) return;
     grid.innerHTML = BOOKS.map(b => {
         const iw = wishlist.includes(b.id);
         return `
@@ -191,7 +278,9 @@ function renderBooks() {
 }
 
 function renderNewReleases() {
-    document.getElementById('releases-scroll').innerHTML = NEW_RELEASES.map(b => `
+    const scroll = document.getElementById('releases-scroll');
+    if(!scroll) return;
+    scroll.innerHTML = NEW_RELEASES.map(b => `
     <div class="release-card" onclick="openReleaseModal(${b.id})">
       <div class="release-cover">
         <div class="release-cover-inner" style="background:${b.color}">
@@ -219,10 +308,14 @@ function filterBooks(genre) {
         c.classList.toggle('hidden', !show);
         if (show) v++;
     });
-    document.getElementById('no-results').style.display = v===0?'block':'none';
-    document.getElementById('section-title-books').innerHTML =
-        genre==='all' ? '<em>Bestsellers</em> del momento' : `Colección de <em>${genre}</em>`;
-    document.getElementById('main-search').value = '';
+    const noRes = document.getElementById('no-results');
+    if(noRes) noRes.style.display = v===0?'block':'none';
+
+    const secTitle = document.getElementById('section-title-books');
+    if(secTitle) secTitle.innerHTML = genre==='all' ? '<em>Bestsellers</em> del momento' : `Colección de <em>${genre}</em>`;
+
+    const searchInp = document.getElementById('main-search');
+    if(searchInp) searchInp.value = '';
 }
 function filterByGenre(genre) { filterBooks(genre); scrollToBooks(); }
 function mainSearchFilter(q) {
@@ -234,13 +327,16 @@ function mainSearchFilter(q) {
         const c = document.getElementById(`card-${b.id}`);
         if (c) { c.classList.toggle('hidden',!m); if (m) v++; }
     });
-    document.getElementById('no-results').style.display = v===0?'block':'none';
-    document.getElementById('section-title-books').innerHTML =
-        v ? `Resultados para <em>"${q}"</em>` : `Sin resultados para <em>"${q}"</em>`;
+    const noRes = document.getElementById('no-results');
+    if(noRes) noRes.style.display = v===0?'block':'none';
+
+    const secTitle = document.getElementById('section-title-books');
+    if(secTitle) secTitle.innerHTML = v ? `Resultados para <em>"${q}"</em>` : `Sin resultados para <em>"${q}"</em>`;
     document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
 }
 function quickSearch(t) {
-    document.getElementById('main-search').value = t;
+    const searchInp = document.getElementById('main-search');
+    if(searchInp) searchInp.value = t;
     mainSearchFilter(t); scrollToBooks();
 }
 function updateCategoryCounts() {
@@ -492,16 +588,43 @@ function validateCheckout() {
     });
     return ok;
 }
-function submitOrder() {
+async function submitOrder() {
     if (!validateCheckout()) { showToast('Completa todos los campos requeridos'); return; }
     const btn = document.querySelector('.checkout-submit-btn');
     btn.textContent = 'Procesando...'; btn.disabled = true;
-    setTimeout(() => {
-        document.getElementById('checkout-inner').style.display = 'none';
-        document.getElementById('order-success').style.display = 'flex';
-        document.getElementById('order-code').textContent = 'Código: FOL-' + Date.now().toString(36).toUpperCase().slice(-8);
-        btn.textContent = 'Confirmar pedido →'; btn.disabled = false;
-    }, 1600);
+
+    const payload = {
+        items: cart.map(i => ({ id: i.id, qty: i.qty })),
+        name:    document.getElementById('ch-name').value.trim(),
+        email:   document.getElementById('ch-email').value.trim(),
+        phone:   document.getElementById('ch-phone').value.trim(),
+        shipping_address: document.getElementById('ch-address').value.trim(),
+        shipping_city:    document.getElementById('ch-city').value.trim(),
+        shipping_zip:     document.getElementById('ch-zip').value.trim(),
+        payment_method:   document.querySelector('input[name="payment"]:checked')?.value || 'card'
+    };
+
+    let code = 'FOL-' + Date.now().toString(36).toUpperCase().slice(-8);
+
+    if (window.FolioBackend?.isAvailable) {
+        try {
+            const out = await FolioBackend.submitOrder(payload);
+            code = out.order?.order_code || code;
+        } catch (e) {
+            btn.textContent = 'Confirmar pedido →'; btn.disabled = false;
+            showToast('Error: ' + e.message);
+            return;
+        }
+    } else {
+        // Fallback offline: simulamos delay
+        await new Promise(r => setTimeout(r, 1200));
+    }
+
+    document.getElementById('checkout-inner').style.display = 'none';
+    document.getElementById('order-success').style.display = 'flex';
+    document.getElementById('order-code').textContent = 'Código: ' + code;
+    btn.textContent = 'Confirmar pedido →'; btn.disabled = false;
+    cart = []; saveCart(); updateCartCount();
 }
 
 // ══ NEWSLETTER ════════════════════════════════════════════════
@@ -664,9 +787,63 @@ async function bootstrapApiContent() {
     }
 }
 
+// ══ BACKEND BOOTSTRAP ════════════════════════════════════════
+// Si el backend está vivo, reemplazamos los libros locales con los de la DB
+// y refrescamos el usuario actual a partir del JWT (por si caducó).
+async function bootstrapBackend() {
+    if (!window.FolioBackend) return;
+    const ok = await FolioBackend.ping();
+    if (!ok) {
+        console.warn('[Folio] Backend no disponible — funcionando en modo offline (datos demo).');
+        return;
+    }
+    try {
+        const r = await FolioBackend.listBooks();
+        if (r.books && r.books.length) {
+            // Mapear los libros de la DB al formato que espera el frontend
+            const mapped = r.books.map(adaptDbBook);
+            BOOKS.length = 0; BOOKS.push(...mapped);
+            renderBooks();
+            observeReveals();
+        }
+    } catch (e) { console.warn('[Folio] No se pudo cargar /api/books:', e.message); }
+
+    if (FolioBackend.isLogged()) {
+        try { await FolioBackend.me(); } catch (e) { FolioBackend.logout(); }
+        updateAuthUI();
+    }
+}
+
+function adaptDbBook(b) {
+    const price = +b.price * (1 - (+b.active_discount || 0) / 100);
+    return {
+        id: b.id,
+        title: b.title,
+        author: b.author,
+        genre: b.genre,
+        subgenre: b.subgenre || b.genre,
+        price: +price.toFixed(2),
+        originalPrice: +b.original_price,
+        isbn: b.isbn || '',
+        coverId: '',
+        olid: '',
+        badge: b.badge || (b.active_discount > 0 ? `-${(+b.active_discount).toFixed(0)}%` : 'Catálogo'),
+        rating: +b.rating || 4.5,
+        reviews: +b.reviews || 0,
+        pages: +b.pages || 320,
+        language: b.language || 'Español',
+        publisher: b.publisher || '',
+        year: +b.year || 2024,
+        color: b.cover_color || 'linear-gradient(135deg,#1a1a22 0%,#080808 100%)',
+        description: b.description || '',
+        shortDesc: b.short_desc || '',
+        tags: [b.genre],
+        cover_url: b.cover_url || ''
+    };
+}
+
 // ══ INIT ════════════════════════════════════════════════════
 (function init() {
-    Auth.init();
     updateAuthUI();
     renderBooks();
     renderNewReleases();
@@ -688,10 +865,11 @@ async function bootstrapApiContent() {
         ratingValue = parseFloat(savedRating); ratingSubmitted = true;
     }
 
-    // Cargar contenido extra desde la API cuando el navegador esté libre
-    if ('requestIdleCallback' in window) {
-        requestIdleCallback(() => bootstrapApiContent(), { timeout: 4000 });
-    } else {
-        setTimeout(bootstrapApiContent, 1200);
-    }
+    // 1) Backend real (preferido). 2) API Open Library como respaldo.
+    bootstrapBackend().then(() => {
+        if (!window.FolioBackend?.isAvailable) {
+            if ('requestIdleCallback' in window) requestIdleCallback(() => bootstrapApiContent(), { timeout: 4000 });
+            else setTimeout(bootstrapApiContent, 1200);
+        }
+    });
 })();
