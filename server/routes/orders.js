@@ -40,11 +40,9 @@ router.post('/', async (req, res) => {
 
         const ids = items.map(i => +i.id);
         const bk = await client.query(
-            `SELECT id, title, price, stock,
-                    COALESCE((SELECT MAX(percent) FROM discounts d WHERE d.book_id = b.id
-                              AND (d.starts_at IS NULL OR d.starts_at <= NOW())
-                              AND (d.ends_at   IS NULL OR d.ends_at   >= NOW())), 0) AS active_discount
-             FROM books b WHERE id = ANY($1::int[]) AND active = TRUE`,
+            `SELECT id, title, stock, effective_price
+             FROM v_books_with_price
+             WHERE id = ANY($1::int[]) AND active = TRUE`,
             [ids]
         );
         if (bk.rowCount !== ids.length) {
@@ -61,7 +59,7 @@ router.post('/', async (req, res) => {
                 await client.query('ROLLBACK');
                 return res.status(400).json({ error: `Stock insuficiente para "${b.title}"` });
             }
-            const unit = +b.price * (1 - (+b.active_discount) / 100);
+            const unit = +b.effective_price;
             subtotal += unit * it.qty;
             lineItems.push({ book_id: b.id, qty: it.qty, unit_price: unit, title: b.title });
         }
@@ -103,31 +101,19 @@ router.post('/', async (req, res) => {
 // GET /api/orders/mine  → órdenes del usuario logueado
 router.get('/mine', requireAuth, async (req, res) => {
     const r = await query(
-        `SELECT o.*,
-                COALESCE(json_agg(json_build_object(
-                    'id', oi.id, 'book_id', oi.book_id, 'title', oi.title,
-                    'qty', oi.qty, 'unit_price', oi.unit_price
-                )) FILTER (WHERE oi.id IS NOT NULL), '[]') AS items
-         FROM orders o LEFT JOIN order_items oi ON oi.order_id = o.id
-         WHERE o.user_id = $1
-         GROUP BY o.id ORDER BY o.created_at DESC`,
+        `SELECT * FROM v_orders_full
+         WHERE user_id = $1
+         ORDER BY created_at DESC`,
         [req.user.id]
     );
     res.json({ orders: r.rows });
 });
 
-// GET /api/orders  (admin)
+// GET /api/orders  (admin) — historial consolidado
 router.get('/', requireAuth, requireRole('admin'), async (req, res) => {
     const r = await query(
-        `SELECT o.*, u.name AS user_name, u.email AS user_email,
-                COALESCE(json_agg(json_build_object(
-                    'id', oi.id, 'title', oi.title, 'qty', oi.qty, 'unit_price', oi.unit_price
-                )) FILTER (WHERE oi.id IS NOT NULL), '[]') AS items
-         FROM orders o
-         LEFT JOIN users u ON u.id = o.user_id
-         LEFT JOIN order_items oi ON oi.order_id = o.id
-         GROUP BY o.id, u.name, u.email
-         ORDER BY o.created_at DESC LIMIT 200`
+        `SELECT * FROM v_orders_full
+         ORDER BY created_at DESC LIMIT 200`
     );
     res.json({ orders: r.rows });
 });

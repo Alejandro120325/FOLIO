@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,800;1,400;1,600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
 </head>
@@ -325,6 +326,17 @@
     </div>
 </div>
 
+<section class="showcase-3d section-transition" id="vitrina-3d">
+    <div class="section-header reveal">
+        <span class="section-tag">Vitrina 3D</span>
+        <h2 class="section-title"><em>Selección</em> destacada</h2>
+        <div class="section-line"></div>
+    </div>
+    <div id="showcase-3d-grid" class="showcase-3d-grid" aria-label="Vitrina 3D de libros destacados">
+        <div class="b3d-empty">Cargando vitrina…</div>
+    </div>
+</section>
+
 <section class="bestsellers section-transition" id="catalogo">
     <div class="section-header reveal">
         <span class="section-tag">Catálogo</span>
@@ -529,6 +541,7 @@
 <script src="js/api-client.js"></script>
 <script src="js/api.js"></script>
 <script src="js/scene.js"></script>
+<script src="js/book3d.js"></script>
 <script src="js/admin.js"></script>
 <script src="js/employee.js"></script>
 <script src="js/app.js"></script>

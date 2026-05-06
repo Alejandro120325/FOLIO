@@ -834,3 +834,230 @@ nav.scrolled{background:rgba(8,8,8,.92);box-shadow:0 4px 30px rgba(0,0,0,.5)}
     backface-visibility: hidden;
     will-change: transform, opacity;
 }
+/* ════ Vitrina 3D — libros como objetos volumétricos ════════════════ */
+/* Dimensiones del libro: 180w x 260h x 28d (px) */
+.showcase-3d{
+    padding:5rem 2rem 3rem;
+    text-align:center;
+    position:relative;
+}
+.showcase-3d-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:3rem 2.5rem;
+    max-width:1280px;
+    margin:2.5rem auto 0;
+    perspective:1400px;
+    perspective-origin:50% 30%;
+    padding:1.5rem 0;
+}
+.b3d-empty{
+    grid-column:1/-1;
+    color:var(--muted);
+    font-family:var(--mono);
+    font-size:.78rem;
+    letter-spacing:.1em;
+    padding:3rem 0;
+}
+.b3d-stage{
+    position:relative;
+    width:180px;
+    height:260px;
+    margin:0 auto;
+    transform-style:preserve-3d;
+    cursor:pointer;
+    outline:none;
+}
+.b3d-stage:focus-visible .b3d{
+    box-shadow:0 0 0 2px var(--gold);
+}
+.b3d{
+    position:relative;
+    width:180px;
+    height:260px;
+    transform-style:preserve-3d;
+    transform:rotateX(4deg) rotateY(-22deg);
+    will-change:transform;
+}
+/* Patrón: cada cara se centra (left:50%; top:50%) y se traslada por la
+   mitad de su tamaño con margin negativo, luego se transforma desde su
+   propio centro hacia la posición correcta de la caja del libro. */
+.b3d-face{
+    position:absolute;
+    left:50%;
+    top:50%;
+    overflow:hidden;
+    box-shadow:inset 0 0 30px rgba(0,0,0,.35);
+}
+.b3d-front,
+.b3d-back{
+    width:180px;
+    height:260px;
+    margin:-130px 0 0 -90px;
+}
+.b3d-front{
+    transform:translateZ(14px);
+    border-radius:1px 3px 3px 1px;
+    background-size:cover;
+    background-position:center;
+}
+.b3d-cover-img{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+}
+.b3d-front-overlay{
+    position:absolute;
+    inset:0;
+    background:
+        linear-gradient(135deg,rgba(255,255,255,.12) 0%,transparent 45%,rgba(0,0,0,.45) 100%),
+        linear-gradient(90deg,rgba(0,0,0,.35) 0%,transparent 8%);
+    pointer-events:none;
+}
+.b3d-front-spine-line{
+    position:absolute;
+    left:0; top:0;
+    width:6px; height:100%;
+    background:linear-gradient(90deg,rgba(0,0,0,.55),transparent);
+    pointer-events:none;
+}
+.b3d-front-text{
+    position:absolute;
+    left:14px; right:14px; bottom:14px;
+    font-family:var(--serif);
+    color:#fff;
+    text-shadow:0 1px 8px rgba(0,0,0,.7);
+    pointer-events:none;
+    z-index:2;
+}
+.b3d-front-text .b3d-title{
+    font-size:.78rem;
+    font-weight:700;
+    line-height:1.25;
+    max-height:3.6em;
+    overflow:hidden;
+}
+.b3d-front-text .b3d-author{
+    font-family:var(--mono);
+    font-size:.55rem;
+    letter-spacing:.08em;
+    opacity:.7;
+    margin-top:.35rem;
+}
+.b3d-badge{
+    position:absolute;
+    top:10px; right:10px;
+    padding:.2rem .55rem;
+    background:var(--gold);
+    color:#0a0a10;
+    font-family:var(--mono);
+    font-size:.55rem;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    z-index:3;
+    border-radius:2px;
+}
+.b3d-back{
+    transform:translateZ(-14px) rotateY(180deg);
+    background-size:cover;
+}
+.b3d-back-overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,.55);
+}
+.b3d-spine{
+    width:28px;
+    height:260px;
+    margin:-130px 0 0 -14px;
+    transform:translateX(-90px) rotateY(-90deg);
+    background-size:1000% 100%;
+    background-position:center;
+    box-shadow:inset 0 0 14px rgba(0,0,0,.6);
+}
+.b3d-spine::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(0,0,0,.3) 60%,rgba(0,0,0,.6));
+    pointer-events:none;
+}
+.b3d-spine-text{
+    position:absolute;
+    left:50%; top:50%;
+    transform:translate(-50%,-50%) rotate(90deg);
+    transform-origin:center;
+    color:rgba(255,255,255,.85);
+    font-family:var(--serif);
+    font-size:.7rem;
+    font-weight:600;
+    white-space:nowrap;
+    max-width:230px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    text-shadow:0 1px 3px rgba(0,0,0,.6);
+}
+/* Cantos (páginas) — patrón clásico de hojas de papel */
+.b3d-edge-r{
+    width:28px;
+    height:260px;
+    margin:-130px 0 0 -14px;
+    transform:translateX(90px) rotateY(90deg);
+    background:repeating-linear-gradient(
+        180deg,
+        #f5ecd6 0,#f5ecd6 1px,
+        #d8cba6 1px,#d8cba6 2px
+    );
+    box-shadow:inset 0 0 8px rgba(0,0,0,.18);
+}
+.b3d-edge-t{
+    width:180px;
+    height:28px;
+    margin:-14px 0 0 -90px;
+    transform:translateY(-130px) rotateX(90deg);
+    background:repeating-linear-gradient(
+        90deg,
+        #f5ecd6 0,#f5ecd6 1px,
+        #d8cba6 1px,#d8cba6 2px
+    );
+    box-shadow:inset 0 0 6px rgba(0,0,0,.15);
+}
+.b3d-edge-b{
+    width:180px;
+    height:28px;
+    margin:-14px 0 0 -90px;
+    transform:translateY(130px) rotateX(-90deg);
+    background:repeating-linear-gradient(
+        90deg,
+        #f5ecd6 0,#f5ecd6 1px,
+        #d8cba6 1px,#d8cba6 2px
+    );
+    box-shadow:inset 0 0 6px rgba(0,0,0,.15);
+}
+.b3d-shadow{
+    position:absolute;
+    left:50%;
+    bottom:-22px;
+    width:160px;
+    height:24px;
+    transform:translateX(-50%);
+    background:radial-gradient(ellipse at center,rgba(0,0,0,.55) 0%,transparent 70%);
+    filter:blur(6px);
+    z-index:-1;
+    pointer-events:none;
+    transition:opacity .4s;
+}
+.b3d-stage:hover .b3d-shadow{opacity:.85}
+
+@media (max-width:520px){
+    .showcase-3d-grid{gap:2.5rem 1.2rem}
+    .b3d-stage,.b3d{width:140px;height:200px}
+    .b3d-front,.b3d-back{width:140px;height:200px;margin:-100px 0 0 -70px}
+    .b3d-spine{height:200px;margin:-100px 0 0 -14px;transform:translateX(-70px) rotateY(-90deg)}
+    .b3d-edge-r{height:200px;margin:-100px 0 0 -14px;transform:translateX(70px) rotateY(90deg)}
+    .b3d-edge-t{width:140px;margin:-14px 0 0 -70px;transform:translateY(-100px) rotateX(90deg)}
+    .b3d-edge-b{width:140px;margin:-14px 0 0 -70px;transform:translateY(100px) rotateX(-90deg)}
+}

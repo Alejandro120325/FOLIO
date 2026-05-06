@@ -56,6 +56,21 @@ async function ensureSchemaIfEmpty() {
     }
 }
 
+async function ensureMigrations() {
+    // Migraciones idempotentes: views, índices full-text, extensiones.
+    // Se aplican en cada arranque; si ya existen, no pasa nada.
+    const migrations = ['migration_001_views_and_search.sql'];
+    for (const file of migrations) {
+        try {
+            const sql = fs.readFileSync(path.join(__dirname, 'sql', file), 'utf8');
+            await pool.query(sql);
+            console.log(`[BOOT] Migración aplicada: ${file}`);
+        } catch (e) {
+            console.warn(`[BOOT] Migración ${file} falló (continuando): ${e.message}`);
+        }
+    }
+}
+
 async function ensureSeedBooksIfEmpty() {
     const r = await query('SELECT COUNT(*)::int AS n FROM books');
     if (r.rows[0].n === 0) {
@@ -99,6 +114,7 @@ async function start() {
     await ensureSchemaIfEmpty();
     await ensureSeedUsers();
     await ensureSeedBooksIfEmpty();
+    await ensureMigrations();
 
     app.listen(PORT, () => {
         console.log(`

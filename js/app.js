@@ -275,6 +275,13 @@ function renderBooks() {
         });
     });
     updateCategoryCounts();
+    renderShowcase3D();
+}
+
+function renderShowcase3D() {
+    const container = document.getElementById('showcase-3d-grid');
+    if (!container || !window.Book3D) return;
+    window.Book3D.mount(container, BOOKS);
 }
 
 function renderNewReleases() {
@@ -815,14 +822,18 @@ async function bootstrapBackend() {
 }
 
 function adaptDbBook(b) {
-    const price = +b.price * (1 - (+b.active_discount || 0) / 100);
+    // effective_price viene precalculado por la view v_books_with_price.
+    // Si por alguna razón no llega (DB anterior a la migración), recalculamos.
+    const price = b.effective_price != null
+        ? +b.effective_price
+        : +b.price * (1 - (+b.active_discount || 0) / 100);
     return {
         id: b.id,
         title: b.title,
         author: b.author,
         genre: b.genre,
         subgenre: b.subgenre || b.genre,
-        price: +price.toFixed(2),
+        price: +(+price).toFixed(2),
         originalPrice: +b.original_price,
         isbn: b.isbn || '',
         coverId: '',

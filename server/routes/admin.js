@@ -7,19 +7,21 @@ const { requireAuth, requireRole } = require('../middleware/auth');
 
 router.use(requireAuth, requireRole('admin'));
 
-// GET /api/admin/stats  → estadísticas para el dashboard
+// GET /api/admin/stats  → estadísticas para el dashboard.
+// Apoyado en la view v_orders_full para evitar repetir JOINs.
 router.get('/stats', async (req, res) => {
     try {
         const totals = await query(`
             SELECT
-              (SELECT COUNT(*) FROM users  WHERE role='client')        AS total_clients,
-              (SELECT COUNT(*) FROM users  WHERE role='employee')      AS total_employees,
-              (SELECT COUNT(*) FROM books  WHERE active=TRUE)          AS total_books,
-              (SELECT COUNT(*) FROM orders)                            AS total_orders,
-              (SELECT COALESCE(SUM(total),0) FROM orders WHERE status IN ('paid','shipped','delivered')) AS revenue,
-              (SELECT COALESCE(SUM(total),0) FROM orders
+              (SELECT COUNT(*) FROM users  WHERE role='client')   AS total_clients,
+              (SELECT COUNT(*) FROM users  WHERE role='employee') AS total_employees,
+              (SELECT COUNT(*) FROM books  WHERE active=TRUE)     AS total_books,
+              (SELECT COUNT(*) FROM v_orders_full)                AS total_orders,
+              (SELECT COALESCE(SUM(total),0) FROM v_orders_full
+                 WHERE status IN ('paid','shipped','delivered'))  AS revenue,
+              (SELECT COALESCE(SUM(total),0) FROM v_orders_full
                  WHERE status IN ('paid','shipped','delivered')
-                   AND created_at >= NOW() - INTERVAL '30 days')       AS revenue_30d
+                   AND created_at >= NOW() - INTERVAL '30 days')  AS revenue_30d
         `);
 
         const topBooks = await query(`
@@ -27,8 +29,8 @@ router.get('/stats', async (req, res) => {
                    SUM(oi.qty) AS units_sold,
                    SUM(oi.qty * oi.unit_price) AS revenue
             FROM order_items oi
-            JOIN books b   ON b.id = oi.book_id
-            JOIN orders o  ON o.id = oi.order_id
+            JOIN books          b ON b.id = oi.book_id
+            JOIN v_orders_full  o ON o.id = oi.order_id
             WHERE o.status IN ('paid','shipped','delivered')
             GROUP BY b.id
             ORDER BY units_sold DESC
@@ -39,7 +41,7 @@ router.get('/stats', async (req, res) => {
             SELECT to_char(date_trunc('month', created_at), 'YYYY-MM') AS month,
                    COUNT(*) AS orders,
                    SUM(total) AS revenue
-            FROM orders
+            FROM v_orders_full
             WHERE status IN ('paid','shipped','delivered')
               AND created_at >= NOW() - INTERVAL '12 months'
             GROUP BY 1 ORDER BY 1
@@ -48,25 +50,25 @@ router.get('/stats', async (req, res) => {
         const byGenre = await query(`
             SELECT b.genre, SUM(oi.qty) AS units
             FROM order_items oi
-            JOIN books b  ON b.id = oi.book_id
-            JOIN orders o ON o.id = oi.order_id
+            JOIN books          b ON b.id = oi.book_id
+            JOIN v_orders_full  o ON o.id = oi.order_id
             WHERE o.status IN ('paid','shipped','delivered')
             GROUP BY b.genre ORDER BY units DESC
         `);
 
         const recent = await query(`
-            SELECT o.id, o.order_code, o.total, o.status, o.created_at,
-                   COALESCE(u.name, o.guest_name) AS buyer
-            FROM orders o LEFT JOIN users u ON u.id = o.user_id
-            ORDER BY o.created_at DESC LIMIT 10
+            SELECT id, order_code, total, status, created_at,
+                   buyer_name AS buyer
+            FROM v_orders_full
+            ORDER BY created_at DESC LIMIT 10
         `);
 
         res.json({
-            totals: totals.rows[0],
+            totals:   totals.rows[0],
             topBooks: topBooks.rows,
-            monthly: monthly.rows,
-            byGenre: byGenre.rows,
-            recent: recent.rows
+            monthly:  monthly.rows,
+            byGenre:  byGenre.rows,
+            recent:   recent.rows
         });
     } catch (err) {
         console.error('[ADMIN /stats]', err);

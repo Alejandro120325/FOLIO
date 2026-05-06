@@ -4,33 +4,52 @@ const router = require('express').Router();
 const { query } = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 
-// GET /api/books  → catálogo público con descuentos activos aplicados
+// GET /api/books  → catálogo público con descuentos activos aplicados.
+// Lee de la view v_books_with_price (incluye active_discount + effective_price).
+// Si llega ?q= usa búsqueda full-text en español + fallback trigram (ILIKE)
+// para tolerar typos. Si llega ?genre= filtra por género.
 router.get('/', async (req, res) => {
     try {
         const { genre, q } = req.query;
-        const filters = ['b.active = TRUE'];
+        const filters = ['active = TRUE'];
         const params  = [];
+
         if (genre && genre !== 'all') {
             params.push(genre);
-            filters.push(`b.genre = $${params.length}`);
+            filters.push(`genre = $${params.length}`);
         }
-        if (q) {
-            params.push('%' + q.toLowerCase() + '%');
-            filters.push(`(LOWER(b.title) LIKE $${params.length} OR LOWER(b.author) LIKE $${params.length})`);
+
+        let orderBy = 'created_at DESC';
+
+        if (q && q.trim()) {
+            params.push(q.trim());
+            const idx = params.length;
+            filters.push(`(
+                to_tsvector('spanish',
+                    COALESCE(title,'')      || ' ' ||
+                    COALESCE(author,'')     || ' ' ||
+                    COALESCE(genre,'')      || ' ' ||
+                    COALESCE(subgenre,'')   || ' ' ||
+                    COALESCE(description,'')
+                ) @@ plainto_tsquery('spanish', $${idx})
+                OR title  ILIKE '%' || $${idx} || '%'
+                OR author ILIKE '%' || $${idx} || '%'
+            )`);
+            orderBy = `ts_rank(
+                to_tsvector('spanish',
+                    COALESCE(title,'') || ' ' ||
+                    COALESCE(author,'') || ' ' ||
+                    COALESCE(description,'')
+                ),
+                plainto_tsquery('spanish', $${idx})
+            ) DESC, created_at DESC`;
         }
-        const where = filters.length ? 'WHERE ' + filters.join(' AND ') : '';
+
+        const where = 'WHERE ' + filters.join(' AND ');
         const sql = `
-            SELECT b.*,
-                   COALESCE((
-                     SELECT MAX(d.percent)
-                     FROM discounts d
-                     WHERE d.book_id = b.id
-                       AND (d.starts_at IS NULL OR d.starts_at <= NOW())
-                       AND (d.ends_at   IS NULL OR d.ends_at   >= NOW())
-                   ), 0) AS active_discount
-            FROM books b
+            SELECT * FROM v_books_with_price
             ${where}
-            ORDER BY b.created_at DESC
+            ORDER BY ${orderBy}
         `;
         const r = await query(sql, params);
         res.json({ books: r.rows });
@@ -44,14 +63,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const r = await query(
-            `SELECT b.*,
-                    COALESCE((
-                      SELECT MAX(d.percent) FROM discounts d
-                      WHERE d.book_id = b.id
-                        AND (d.starts_at IS NULL OR d.starts_at <= NOW())
-                        AND (d.ends_at   IS NULL OR d.ends_at   >= NOW())
-                    ), 0) AS active_discount
-             FROM books b WHERE b.id = $1`,
+            `SELECT * FROM v_books_with_price WHERE id = $1`,
             [req.params.id]
         );
         if (!r.rowCount) return res.status(404).json({ error: 'Libro no encontrado' });
