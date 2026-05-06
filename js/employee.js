@@ -11,13 +11,20 @@ const Employee = {
             showToast('Acceso solo para empleados');
             return;
         }
-        document.getElementById('emp-overlay').classList.add('open');
+        const ov = document.getElementById('emp-overlay');
+        if (!ov) { showToast('Panel empleado no disponible'); return; }
+        ov.hidden = false;
+        void ov.offsetWidth;
+        ov.classList.add('open');
         document.body.style.overflow = 'hidden';
         await this.loadAll();
     },
     close() {
-        document.getElementById('emp-overlay').classList.remove('open');
+        const ov = document.getElementById('emp-overlay');
+        if (!ov) return;
+        ov.classList.remove('open');
         document.body.style.overflow = '';
+        setTimeout(() => { if (!ov.classList.contains('open')) ov.hidden = true; }, 350);
     },
     async loadAll() {
         const root = document.getElementById('emp-content');

@@ -6,13 +6,20 @@
 const Admin = {
     async open() {
         if (!window.FolioBackend?.hasRole('admin')) { showToast('Acceso solo para administradores'); return; }
-        document.getElementById('admin-overlay').classList.add('open');
+        const ov = document.getElementById('admin-overlay');
+        if (!ov) { showToast('Panel admin no disponible'); return; }
+        ov.hidden = false;
+        void ov.offsetWidth;
+        ov.classList.add('open');
         document.body.style.overflow = 'hidden';
         await this.loadAll();
     },
     close() {
-        document.getElementById('admin-overlay').classList.remove('open');
+        const ov = document.getElementById('admin-overlay');
+        if (!ov) return;
+        ov.classList.remove('open');
         document.body.style.overflow = '';
+        setTimeout(() => { if (!ov.classList.contains('open')) ov.hidden = true; }, 350);
     },
     async loadAll() {
         const root = document.getElementById('admin-content');

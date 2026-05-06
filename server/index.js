@@ -59,7 +59,10 @@ async function ensureSchemaIfEmpty() {
 async function ensureMigrations() {
     // Migraciones idempotentes: views, índices full-text, extensiones.
     // Se aplican en cada arranque; si ya existen, no pasa nada.
-    const migrations = ['migration_001_views_and_search.sql'];
+    const migrations = [
+        'migration_001_views_and_search.sql',
+        'migration_002_user_profile.sql'
+    ];
     for (const file of migrations) {
         try {
             const sql = fs.readFileSync(path.join(__dirname, 'sql', file), 'utf8');

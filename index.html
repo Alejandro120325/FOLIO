@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,800;1,400;1,600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=4">
     <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
 </head>
 <body>
@@ -70,22 +70,69 @@
         <p class="auth-switch-text">¿No tienes cuenta? <button onclick="switchAuthTab('register')">Regístrate gratis</button></p>
     </div>
     <div id="auth-register-form" class="auth-form" style="display:none">
+        <div class="reg-avatar-row">
+            <div id="reg-avatar-preview" class="reg-avatar-preview" tabindex="0"
+                 role="button" aria-label="Subir foto de perfil">
+                <span class="reg-avatar-placeholder">+ Foto</span>
+            </div>
+            <input id="reg-avatar-file" type="file" accept="image/*" hidden>
+        </div>
         <div class="auth-form-group">
             <label class="auth-label">Nombre completo</label>
-            <input class="auth-input" id="reg-name" type="text" placeholder="Tu nombre">
+            <input class="auth-input" id="reg-name" type="text" placeholder="Tu nombre" autocomplete="name">
+        </div>
+        <div class="auth-form-group">
+            <label class="auth-label">Cédula <span class="auth-label-hint">(Ecuador, 10 dígitos)</span></label>
+            <input class="auth-input" id="reg-cedula" type="text" inputmode="numeric"
+                   placeholder="0000000000" maxlength="10" autocomplete="off">
+            <div id="reg-cedula-feedback" class="field-feedback" aria-live="polite"></div>
+        </div>
+        <div class="auth-form-row">
+            <div class="auth-form-group">
+                <label class="auth-label">Estado civil</label>
+                <select class="auth-input" id="reg-marital">
+                    <option value="">Selecciona…</option>
+                    <option value="soltero">Soltero/a</option>
+                    <option value="casado">Casado/a</option>
+                    <option value="viudo">Viudo/a</option>
+                </select>
+            </div>
+            <div class="auth-form-group">
+                <label class="auth-label">Teléfono <span class="auth-label-hint">(opcional)</span></label>
+                <input class="auth-input" id="reg-phone" type="tel" placeholder="+593…" autocomplete="tel">
+            </div>
         </div>
         <div class="auth-form-group">
             <label class="auth-label">Email</label>
-            <input class="auth-input" id="reg-email" type="email" placeholder="tu@email.com">
+            <input class="auth-input" id="reg-email" type="email" placeholder="tu@email.com" autocomplete="email">
         </div>
         <div class="auth-form-group">
             <label class="auth-label">Contraseña</label>
-            <input class="auth-input" id="reg-pass" type="password" placeholder="Mínimo 6 caracteres">
+            <input class="auth-input" id="reg-pass" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
         </div>
         <div id="auth-reg-err" class="auth-err"></div>
-        <button class="auth-submit-btn" onclick="handleRegister()">Crear cuenta →</button>
+        <button class="auth-submit-btn" onclick="handleRegisterExtended()">Crear cuenta →</button>
         <p class="auth-switch-text">¿Ya tienes cuenta? <button onclick="switchAuthTab('login')">Inicia sesión</button></p>
     </div>
+</div>
+
+<div id="profile-overlay" class="auth-overlay" onclick="closeProfileSuccess()" hidden></div>
+<div id="profile-modal" class="profile-modal glass-panel" role="dialog" aria-modal="true" aria-label="Perfil del usuario" hidden>
+    <button class="auth-close" onclick="closeProfileSuccess()">✕</button>
+    <div class="profile-success-tag">✓ Cuenta creada</div>
+    <h3 class="profile-success-title">Bienvenido a <em>Folio</em></h3>
+    <div id="profile-avatar" class="profile-avatar" aria-hidden="true">FO</div>
+    <h4 id="profile-name" class="profile-name">—</h4>
+    <p class="profile-success-sub">Tu perfil está listo. Ya puedes explorar el catálogo.</p>
+    <div class="profile-grid">
+        <div class="profile-row"><span class="profile-key">Email</span>        <span id="profile-email"   class="profile-val">—</span></div>
+        <div class="profile-row"><span class="profile-key">Cédula</span>       <span id="profile-cedula"  class="profile-val">—</span></div>
+        <div class="profile-row"><span class="profile-key">Estado civil</span> <span id="profile-marital" class="profile-val">—</span></div>
+        <div class="profile-row"><span class="profile-key">Teléfono</span>     <span id="profile-phone"   class="profile-val">—</span></div>
+        <div class="profile-row"><span class="profile-key">Rol</span>          <span id="profile-role"    class="profile-val">—</span></div>
+        <div class="profile-row"><span class="profile-key">Registrado</span>   <span id="profile-date"    class="profile-val">—</span></div>
+    </div>
+    <button class="auth-submit-btn" onclick="closeProfileSuccess()">Empezar a explorar →</button>
 </div>
 
 <div id="cart-overlay" class="cart-overlay" onclick="closeCart()"></div>
@@ -212,6 +259,8 @@
             <span class="auth-avatar" id="auth-avatar">A</span>
             <span class="auth-username" id="auth-username">Usuario</span>
             <div class="auth-user-dropdown" id="user-dropdown">
+                <button id="menu-admin"    onclick="event.stopPropagation();Admin.open()"    style="display:none">Panel admin</button>
+                <button id="menu-employee" onclick="event.stopPropagation();Employee.open()" style="display:none">Panel empleado</button>
                 <button onclick="handleLogout()">Cerrar sesión</button>
             </div>
         </div>
@@ -526,6 +575,16 @@
     </div>
 </div>
 
+<div id="admin-overlay" class="dash-overlay" hidden>
+    <button class="dash-close" onclick="Admin.close()" aria-label="Cerrar panel">✕</button>
+    <div id="admin-content" class="dash-content"></div>
+</div>
+
+<div id="emp-overlay" class="dash-overlay" hidden>
+    <button class="dash-close" onclick="Employee.close()" aria-label="Cerrar panel">✕</button>
+    <div id="emp-content" class="dash-content"></div>
+</div>
+
 <button class="rating-fab" id="rating-fab" onclick="openRating()" title="Calificar Folio">
     <span id="fab-star">★</span><span id="fab-text">Calificar</span>
 </button>
@@ -535,6 +594,7 @@
     <button class="theme-btn active" id="tbtn-default" onclick="setTheme('default')" title="Oscuro Clásico"><span class="theme-dot" style="background:linear-gradient(135deg,#080808 50%,#c9a84c 50%)"></span></button>
     <button class="theme-btn" id="tbtn-warm" onclick="setTheme('warm')" title="Ámbar Antiguo"><span class="theme-dot" style="background:linear-gradient(135deg,#0c0805 50%,#d4922a 50%)"></span></button>
     <button class="theme-btn" id="tbtn-neon" onclick="setTheme('neon')" title="Neón Digital"><span class="theme-dot" style="background:linear-gradient(135deg,#040810 50%,#00c8ff 50%)"></span></button>
+    <button class="theme-btn" id="tbtn-light" onclick="setTheme('light')" title="Modo Claro"><span class="theme-dot" style="background:linear-gradient(135deg,#f5f1ea 50%,#b88b2a 50%)"></span></button>
 </div>
 
 <script src="js/data.js"></script>
@@ -542,6 +602,7 @@
 <script src="js/api.js"></script>
 <script src="js/scene.js"></script>
 <script src="js/book3d.js"></script>
+<script src="js/profile.js"></script>
 <script src="js/admin.js"></script>
 <script src="js/employee.js"></script>
 <script src="js/app.js"></script>

@@ -52,9 +52,21 @@ const FolioBackend = {
         return out.user;
     },
     async register(name, email, password) {
-        // Todo el que se registre en la web será "client"
+        // Registro mínimo (legacy). El frontend ahora usa _registerExtended.
         const out = await api('/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password, role: 'client' }) });
         setToken(out.token); setStoredUser(out.user);
+        return out.user;
+    },
+    // Registro extendido: cedula, marital_status, avatar_url, phone.
+    // Devuelve el user completo (no sólo {id,name,email,role}).
+    async _registerExtended(payload) {
+        const out = await api('/auth/register', { method: 'POST', body: JSON.stringify(payload) });
+        setToken(out.token); setStoredUser(out.user);
+        return out.user;
+    },
+    async updateMe(patch) {
+        const out = await api('/auth/me', { method: 'PUT', body: JSON.stringify(patch) });
+        setStoredUser(out.user);
         return out.user;
     },
     async me() {

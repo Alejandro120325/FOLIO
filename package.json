@@ -1,0 +1,23 @@
+{
+  "name": "folio-libreria",
+  "version": "2.0.0",
+  "description": "Folio — Librería digital con backend PostgreSQL y 3 roles (admin / empleado / cliente)",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.20.0"
+  },
+  "author": "Jairo Alejandro Ojeda Herrera",
+  "license": "MIT"
+}
