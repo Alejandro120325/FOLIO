@@ -3,7 +3,7 @@
 // ══ CLIENTE HTTP HACIA EL BACKEND ════════════════════════════════
 // Encapsula fetch() + JWT en localStorage. Expuesto en window.FolioBackend.
 
-const FOLIO_API_BASE = 'http://localhost:3000/api';
+const FOLIO_API_BASE = 'https://folio-production-c35b.up.railway.app/api';
 
 const TOKEN_KEY = 'folio-token';
 const USER_KEY  = 'folio-user-v2';
