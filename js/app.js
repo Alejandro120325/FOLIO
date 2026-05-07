@@ -72,27 +72,96 @@ async function handleLogin() {
 }
 
 async function handleRegister() {
-    const name  = document.getElementById('reg-name').value.trim();
-    const email = document.getElementById('reg-email').value.trim();
-    const pass  = document.getElementById('reg-pass').value;
-    const err   = document.getElementById('auth-reg-err');
+    const err = document.getElementById('auth-reg-err');
+    const btn = document.querySelector('#auth-register-form .auth-submit-btn');
     err.textContent = '';
 
-    if (!name || !email || !pass) { err.textContent = 'Completa todos los campos.'; return; }
-    if (pass.length < 6) { err.textContent = 'La contraseña debe tener al menos 6 caracteres.'; return; }
+    // 1. Captura de datos
+    const name    = document.getElementById('reg-name').value.trim();
+    const email   = document.getElementById('reg-email').value.trim();
+    const pass    = document.getElementById('reg-pass').value;
+    const cedula  = document.getElementById('reg-cedula').value.trim();
+    const phone   = document.getElementById('reg-phone').value.trim();
+    const marital = document.getElementById('reg-marital').value;
+    const photoInput = document.getElementById('reg-avatar-file');
 
+    // 2. Validaciones básicas
+    if (!name || !email || !pass || !cedula || !marital) {
+        err.textContent = 'Completa todos los campos obligatorios.';
+        return;
+    }
+
+    // 3. Feedback visual
+    btn.disabled = true;
     err.style.color = 'var(--gold)';
-    err.textContent = 'Creando cuenta...';
+    err.textContent = 'Creando tu cuenta premium...';
 
     try {
-        const user = await FolioBackend.register(name, email, pass);
-        closeAuth(); updateAuthUI();
-        showToast(`¡Cuenta creada! Bienvenido, ${user.name}.`);
+        // Registro en Backend (Supabase)
+        const user = await window.FolioBackend.register(name, email, pass);
+
+        // 4. Llenar los datos en el Modal de Éxito
+        document.getElementById('profile-name').textContent = user.name;
+        document.getElementById('profile-email').textContent = user.email;
+        document.getElementById('profile-cedula').textContent = cedula;
+        document.getElementById('profile-marital').textContent = marital;
+        document.getElementById('profile-phone').textContent = phone || 'No registrado';
+        document.getElementById('profile-role').textContent = 'Cliente';
+        document.getElementById('profile-date').textContent = new Date().toLocaleDateString();
+
+        // 🔥 TRUCO PARA LA IMAGEN 🔥
+        const pAvatar = document.getElementById('profile-avatar');
+        if (photoInput.files && photoInput.files[0]) {
+            // Si el usuario subió una foto, la mostramos usando una URL temporal
+            const imgUrl = URL.createObjectURL(photoInput.files[0]);
+            pAvatar.textContent = ''; // Quitamos las letras
+            pAvatar.style.backgroundImage = `url(${imgUrl})`;
+            pAvatar.style.backgroundSize = 'cover';
+            pAvatar.classList.add('has-image');
+        } else {
+            // Si no subió nada, ponemos las iniciales
+            pAvatar.textContent = name.substring(0, 2).toUpperCase();
+            pAvatar.style.backgroundImage = 'none';
+        }
+
+        // 5. Cerrar registro y abrir éxito
+        closeAuth();
+        updateAuthUI();
+
+        const pOverlay = document.getElementById('profile-overlay');
+        const pModal = document.getElementById('profile-modal');
+
+        pOverlay.removeAttribute('hidden');
+        pModal.removeAttribute('hidden');
+
+        setTimeout(() => {
+            pOverlay.classList.add('open');
+            pModal.classList.add('open');
+        }, 50);
+
     } catch (e) {
-        err.style.color = '#e05555';
-        err.textContent = e.message || 'No se pudo crear la cuenta.';
+        console.error(e);
+        err.style.color = '#ff6b6b';
+        err.textContent = e.message || 'Error al conectar con el servidor.';
+    } finally {
+        btn.disabled = false;
     }
 }
+
+// Función para cerrar el modal de perfil de éxito
+window.closeProfileSuccess = function() {
+    const pOverlay = document.getElementById('profile-overlay');
+    const pModal = document.getElementById('profile-modal');
+
+    pOverlay.classList.remove('open');
+    pModal.classList.remove('open');
+
+    // Esperamos a que termine la animación para ocultarlo del DOM
+    setTimeout(() => {
+        pOverlay.setAttribute('hidden', 'true');
+        pModal.setAttribute('hidden', 'true');
+    }, 300);
+};
 
 function handleLogout() {
     window.FolioBackend?.logout();
@@ -163,6 +232,16 @@ function setTheme(theme) {
 // ══ HELPERS ══════════════════════════════════════════════════════
 const ALL_BOOKS = () => [...BOOKS, ...NEW_RELEASES];
 function allBooksById(id) { return ALL_BOOKS().find(b => b.id === id); }
+function togglePassword(inputId, btn) {
+    const inp = document.getElementById(inputId);
+    if (inp.type === 'password') {
+        inp.type = 'text';
+        btn.textContent = '🙈'; // Monito tapándose los ojos (o el icono que prefieras)
+    } else {
+        inp.type = 'password';
+        btn.textContent = '👁️'; // Vuelve al ojo normal
+    }
+}
 function renderStars(r) {
     const f = Math.floor(r), h = r%1 >= .5;
     return '★'.repeat(f)+(h?'½':'')+'☆'.repeat(5-f-(h?1:0));
@@ -326,19 +405,28 @@ function filterBooks(genre) {
 }
 function filterByGenre(genre) { filterBooks(genre); scrollToBooks(); }
 function mainSearchFilter(q) {
-    const ql = q.trim().toLowerCase();
-    if (!ql) { filterBooks(currentFilter); return; }
+    const query = (q || '').trim();
+    if (!query) { filterBooks(currentFilter); return; }
     let v = 0;
     BOOKS.forEach(b => {
-        const m = [b.title,b.author,b.genre,b.subgenre,...(b.tags||[])].some(s => s.toLowerCase().includes(ql));
+        const s =
+            fuzzyScore(b.title,    query) * 5 +
+            fuzzyScore(b.author,   query) * 3 +
+            fuzzyScore(b.genre,    query) * 2 +
+            fuzzyScore(b.subgenre, query) * 2 +
+            fuzzyScore(b.badge,    query) * 1 +
+            fuzzyScore(String(b.isbn || ''), query) * 2 +
+            fuzzyScore(String(b.year || ''), query) * 1 +
+            ((b.tags || []).reduce((a, t) => a + fuzzyScore(t, query), 0));
+        const m = s > 0;
         const c = document.getElementById(`card-${b.id}`);
-        if (c) { c.classList.toggle('hidden',!m); if (m) v++; }
+        if (c) { c.classList.toggle('hidden', !m); if (m) v++; }
     });
     const noRes = document.getElementById('no-results');
     if(noRes) noRes.style.display = v===0?'block':'none';
 
     const secTitle = document.getElementById('section-title-books');
-    if(secTitle) secTitle.innerHTML = v ? `Resultados para <em>"${q}"</em>` : `Sin resultados para <em>"${q}"</em>`;
+    if(secTitle) secTitle.innerHTML = v ? `Resultados para <em>"${query}"</em>` : `Sin resultados para <em>"${query}"</em>`;
     document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
 }
 function quickSearch(t) {
@@ -347,7 +435,8 @@ function quickSearch(t) {
     mainSearchFilter(t); scrollToBooks();
 }
 function updateCategoryCounts() {
-    ['Fantasía','Ciencia Ficción','Thriller','Literatura','No Ficción'].forEach(g => {
+    // Agregamos Tecnología y Manga al contador de etiquetas
+    ['Fantasía','Ciencia Ficción','Thriller','Tecnología','No Ficción', 'Manga'].forEach(g => {
         const el = document.getElementById(`cnt-${g}`);
         if (el) el.textContent = `${BOOKS.filter(b => b.genre===g).length} títulos`;
     });
@@ -365,14 +454,63 @@ function closeSearch() {
     document.getElementById('search-overlay-input').value = '';
     document.getElementById('search-results').innerHTML = '';
 }
+// ── Fuzzy matcher ────────────────────────────────────────────────
+// Devuelve un score numérico: 0 = no coincide. Mayor = mejor match.
+//   - Coincidencia exacta de subcadena: score base alto, mejor cuanto antes empieza.
+//   - Subsecuencia (caracteres en orden, no necesariamente contiguos):
+//     score basado en proximidad — caracteres más juntos puntúan más.
+//   - Ignora acentos: "Garcia" matchea "García".
+function _foldDiacritics(s) {
+    return s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+function fuzzyScore(text, query) {
+    if (!query) return 0;
+    const t = _foldDiacritics(String(text || '').toLowerCase());
+    const q = _foldDiacritics(query.toLowerCase());
+    if (!t) return 0;
+
+    // Match exacto contiguo
+    const idx = t.indexOf(q);
+    if (idx !== -1) return 1000 + Math.max(0, 50 - idx);
+
+    // Subsecuencia: cada carácter de q aparece en t en orden
+    let last = -1, score = 0;
+    for (const ch of q) {
+        const at = t.indexOf(ch, last + 1);
+        if (at === -1) return 0;
+        // gap pequeño = mejor; primer char temprano = mejor
+        const gap = at - last - 1;
+        score += Math.max(1, 12 - gap);
+        last = at;
+    }
+    // Bonus si el primer carácter coincide con el inicio del texto
+    if (t[0] === q[0]) score += 8;
+    return score;
+}
+
 function handleLiveSearch(query) {
-    const q = query.trim().toLowerCase();
+    const q = query.trim();
     const c = document.getElementById('search-results');
     if (!q) { c.innerHTML=''; return; }
-    const res = ALL_BOOKS().filter(b =>
-        b.title.toLowerCase().includes(q)||b.author.toLowerCase().includes(q)||
-        b.genre.toLowerCase().includes(q)||(b.tags||[]).some(t=>t.toLowerCase().includes(q))
-    ).slice(0,12);
+
+    // Score multivariable: title pesa más, luego author, luego género/subgénero, badge, isbn, year, tags
+    const scored = ALL_BOOKS().map(b => {
+        const s =
+            fuzzyScore(b.title,    q) * 5 +
+            fuzzyScore(b.author,   q) * 3 +
+            fuzzyScore(b.genre,    q) * 2 +
+            fuzzyScore(b.subgenre, q) * 2 +
+            fuzzyScore(b.badge,    q) * 1 +
+            fuzzyScore(String(b.isbn || ''), q) * 2 +
+            fuzzyScore(String(b.year || ''), q) * 1 +
+            ((b.tags || []).reduce((a, t) => a + fuzzyScore(t, q), 0));
+        return { b, s };
+    }).filter(x => x.s > 0)
+      .sort((a, b) => b.s - a.s)
+      .slice(0, 12)
+      .map(x => x.b);
+
+    const res = scored;
     if (!res.length) { c.innerHTML='<div class="search-no-results">No se encontraron resultados</div>'; return; }
     c.innerHTML = res.map(b => `
     <div class="search-result-item" onclick="closeSearch();${b.id<100?`openBookModalById(${b.id})`:`openReleaseModal(${b.id})`}">
@@ -796,7 +934,6 @@ async function bootstrapApiContent() {
 
 // ══ BACKEND BOOTSTRAP ════════════════════════════════════════
 // Si el backend está vivo, reemplazamos los libros locales con los de la DB
-// y refrescamos el usuario actual a partir del JWT (por si caducó).
 async function bootstrapBackend() {
     if (!window.FolioBackend) return;
     const ok = await FolioBackend.ping();
@@ -812,6 +949,11 @@ async function bootstrapBackend() {
             BOOKS.length = 0; BOOKS.push(...mapped);
             renderBooks();
             observeReveals();
+
+            // 🔥 Le avisamos a la escena 3D que ya llegaron los libros reales
+            if (window.folioSceneInstance) {
+                window.folioSceneInstance.updateBooks();
+            }
         }
     } catch (e) { console.warn('[Folio] No se pudo cargar /api/books:', e.message); }
 
@@ -822,8 +964,6 @@ async function bootstrapBackend() {
 }
 
 function adaptDbBook(b) {
-    // effective_price viene precalculado por la view v_books_with_price.
-    // Si por alguna razón no llega (DB anterior a la migración), recalculamos.
     const price = b.effective_price != null
         ? +b.effective_price
         : +b.price * (1 - (+b.active_discount || 0) / 100);
@@ -865,7 +1005,30 @@ function adaptDbBook(b) {
     initNavScroll();
     observeReveals();
 
-    if (typeof THREE !== 'undefined' && typeof FolioScene === 'function') new FolioScene();
+    // ══ LÓGICA DE VISTA PREVIA DE AVATAR ══════════════════════
+    document.getElementById('reg-avatar-preview')?.addEventListener('click', () => {
+        document.getElementById('reg-avatar-file').click();
+    });
+
+    document.getElementById('reg-avatar-file')?.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const preview = document.getElementById('reg-avatar-preview');
+                preview.style.backgroundImage = `url(${e.target.result})`;
+                preview.classList.add('has-image');
+                const placeholder = preview.querySelector('.reg-avatar-placeholder');
+                if(placeholder) placeholder.style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Guardamos la instancia de los 4 libros flotantes en window
+    if (typeof THREE !== 'undefined' && typeof FolioScene === 'function') {
+        window.folioSceneInstance = new FolioScene();
+    }
 
     const savedTheme = localStorage.getItem('folio-theme') || 'default';
     setTheme(savedTheme);
@@ -876,11 +1039,8 @@ function adaptDbBook(b) {
         ratingValue = parseFloat(savedRating); ratingSubmitted = true;
     }
 
-    // 1) Backend real (preferido). 2) API Open Library como respaldo.
+    // 🔥 EJECUTAMOS LA CONEXIÓN A SUPABASE 🔥
     bootstrapBackend().then(() => {
-        if (!window.FolioBackend?.isAvailable) {
-            if ('requestIdleCallback' in window) requestIdleCallback(() => bootstrapApiContent(), { timeout: 4000 });
-            else setTimeout(bootstrapApiContent, 1200);
-        }
+        console.log('[FRONTEND] Catálogo oficial cargado desde Supabase.');
     });
 })();

@@ -54,33 +54,56 @@ class FolioScene {
     }
 
     _coverTex(book) {
+        // 1. Crear el Canvas Base (Fondo elegante temporal/respaldo)
         const cv = document.createElement('canvas');
-        cv.width = 256; cv.height = 384;
+        cv.width = 512; cv.height = 768;
         const ctx = cv.getContext('2d');
-        const [c1, c2] = this._parseColors(book.color);
-        const g = ctx.createLinearGradient(0, 0, 256, 384);
+        const tex = new THREE.CanvasTexture(cv);
+        tex.anisotropy = 16;
+
+        // Pintamos el diseño elegante SIEMPRE primero
+        const [c1, c2] = this._parseColors(book.color || 'linear-gradient(135deg,#222,#000)');
+        const g = ctx.createLinearGradient(0, 0, 512, 768);
         g.addColorStop(0, c1); g.addColorStop(1, c2);
-        ctx.fillStyle = g; ctx.fillRect(0, 0, 256, 384);
-        const hl = ctx.createLinearGradient(0, 0, 256, 0);
-        hl.addColorStop(0, 'rgba(255,255,255,.1)'); hl.addColorStop(.5, 'rgba(255,255,255,0)');
-        ctx.fillStyle = hl; ctx.fillRect(0, 0, 256, 384);
-        ctx.fillStyle = '#c9a84c'; ctx.fillRect(18, 18, 3, 80);
-        ctx.fillStyle = 'rgba(201,168,76,0.9)'; ctx.fillRect(18, 18, 88, 18);
-        ctx.fillStyle = '#060606'; ctx.font = 'bold 10px monospace';
-        ctx.fillText((book.badge || 'FOLIO').substring(0,12).toUpperCase(), 22, 30);
-        ctx.font = 'bold 22px Georgia,serif';
-        ctx.fillStyle = 'rgba(255,255,255,0.92)';
-        const words = book.title.split(' ');
-        let line = '', y = 290;
-        for (const w of words) {
-            const t = line + w + ' ';
-            if (ctx.measureText(t).width > 218 && line) { ctx.fillText(line, 18, y); line = w + ' '; y += 28; }
-            else line = t;
-        }
-        ctx.fillText(line, 18, y);
-        ctx.font = '13px monospace'; ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.fillText(book.author.substring(0,22), 18, y + 24);
-        return new THREE.CanvasTexture(cv);
+        ctx.fillStyle = g; ctx.fillRect(0, 0, 512, 768);
+
+        ctx.fillStyle = 'rgba(201,168,76,0.8)'; ctx.fillRect(40, 40, 6, 150);
+        ctx.font = 'bold 40px Georgia, serif'; ctx.fillStyle = 'white';
+        ctx.fillText((book.title || '').substring(0, 20), 40, 600);
+        ctx.font = '20px monospace'; ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.fillText((book.author || '').substring(0, 30), 40, 640);
+
+        if (!book.isbn) return tex;
+
+        // 2. Método Infalible: Cargar la imagen vía Fetch y Blob
+        const url = `https://covers.openlibrary.org/b/isbn/${book.isbn}-L.jpg?default=false`;
+
+        fetch(url)
+            .then(response => {
+                if (!response.ok) throw new Error('Imagen no encontrada');
+                return response.blob();
+            })
+            .then(blob => {
+                // Creamos una URL local temporal a partir del Blob
+                const localUrl = URL.createObjectURL(blob);
+                const img = new Image();
+                img.onload = () => {
+                    // Si la imagen cargada es real (no un pixel transparente)
+                    if (img.width > 10) {
+                        ctx.drawImage(img, 0, 0, 512, 768);
+                        tex.needsUpdate = true;
+                    }
+                    // Liberamos memoria
+                    URL.revokeObjectURL(localUrl);
+                };
+                img.src = localUrl;
+            })
+            .catch(err => {
+                // Si la descarga falla silenciosamente, se queda el Canvas elegante
+                console.log(`[INFO] No se pudo cargar portada para ${book.title}`);
+            });
+
+        return tex;
     }
 
     _spineTex(book) {
@@ -151,6 +174,16 @@ class FolioScene {
             new THREE.Euler(rotations[i].x, rotations[i].y, rotations[i].z)
         ));
     }
+
+    // Método para reconstruir los libros cuando llegan los datos de Supabase
+    updateBooks() {
+        // Borramos los libros falsos anteriores
+        this.bookMeshes.forEach(b => this.scene.remove(b.group));
+        this.bookMeshes = [];
+        // Volvemos a crear los libros, pero ahora con la variable BOOKS que ya tiene los ISBN reales
+        this._books();
+    }
+
 
     _particles() {
         const n = 100, pos = new Float32Array(n * 3);

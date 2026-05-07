@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FOLIO — Librería de Alejo</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,800;1,400;1,600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,800;1,400;1,600&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Space+Mono:wght@400;700&family=Roboto:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-    <link rel="stylesheet" href="css/style.css?v=4">
+    <link rel="stylesheet" href="css/style.css?v=5">
     <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
 </head>
 <body>
@@ -56,20 +56,27 @@
         <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Iniciar sesión</button>
         <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Registrarse</button>
     </div>
-    <div id="auth-login-form" class="auth-form">
+    <form id="auth-login-form" class="auth-form" onsubmit="event.preventDefault();handleLogin();return false;" autocomplete="on">
         <div class="auth-form-group">
-            <label class="auth-label">Email</label>
-            <input class="auth-input" id="login-email" type="email" placeholder="tu@email.com">
+            <label class="auth-label" for="login-email">Email</label>
+            <input class="auth-input" id="login-email" name="email" type="email"
+                   placeholder="tu@email.com" autocomplete="username email"
+                   autocapitalize="none" autocorrect="off" spellcheck="false" required>
         </div>
         <div class="auth-form-group">
-            <label class="auth-label">Contraseña</label>
-            <input class="auth-input" id="login-pass" type="password" placeholder="••••••••">
+            <label class="auth-label" for="login-pass">Contraseña</label>
+            <div class="password-group">
+                <input class="auth-input" id="login-pass" name="password" type="password"
+                       placeholder="••••••••" autocomplete="current-password" required>
+                <button type="button" class="toggle-pass-btn" onclick="togglePassword('login-pass', this)">👁️</button>
+            </div>
         </div>
         <div id="auth-login-err" class="auth-err"></div>
-        <button class="auth-submit-btn" onclick="handleLogin()">Entrar →</button>
-        <p class="auth-switch-text">¿No tienes cuenta? <button onclick="switchAuthTab('register')">Regístrate gratis</button></p>
-    </div>
-    <div id="auth-register-form" class="auth-form" style="display:none">
+        <button type="submit" class="auth-submit-btn">Entrar →</button>
+        <p class="auth-switch-text">¿No tienes cuenta? <button type="button" onclick="switchAuthTab('register')">Regístrate gratis</button></p>
+    </form>
+    <form id="auth-register-form" class="auth-form" style="display:none"
+          onsubmit="event.preventDefault();handleRegister();return false;" autocomplete="on">
         <div class="reg-avatar-row">
             <div id="reg-avatar-preview" class="reg-avatar-preview" tabindex="0"
                  role="button" aria-label="Subir foto de perfil">
@@ -78,19 +85,19 @@
             <input id="reg-avatar-file" type="file" accept="image/*" hidden>
         </div>
         <div class="auth-form-group">
-            <label class="auth-label">Nombre completo</label>
-            <input class="auth-input" id="reg-name" type="text" placeholder="Tu nombre" autocomplete="name">
+            <label class="auth-label" for="reg-name">Nombre completo</label>
+            <input class="auth-input" id="reg-name" name="name" type="text" placeholder="Tu nombre" autocomplete="name" required>
         </div>
         <div class="auth-form-group">
-            <label class="auth-label">Cédula <span class="auth-label-hint">(Ecuador, 10 dígitos)</span></label>
-            <input class="auth-input" id="reg-cedula" type="text" inputmode="numeric"
-                   placeholder="0000000000" maxlength="10" autocomplete="off">
+            <label class="auth-label" for="reg-cedula">Cédula <span class="auth-label-hint">(Ecuador, 10 dígitos)</span></label>
+            <input class="auth-input" id="reg-cedula" name="cedula" type="text" inputmode="numeric"
+                   placeholder="0000000000" maxlength="10" autocomplete="off" required>
             <div id="reg-cedula-feedback" class="field-feedback" aria-live="polite"></div>
         </div>
         <div class="auth-form-row">
             <div class="auth-form-group">
-                <label class="auth-label">Estado civil</label>
-                <select class="auth-input" id="reg-marital">
+                <label class="auth-label" for="reg-marital">Estado civil</label>
+                <select class="auth-input" id="reg-marital" name="marital_status" required>
                     <option value="">Selecciona…</option>
                     <option value="soltero">Soltero/a</option>
                     <option value="casado">Casado/a</option>
@@ -98,22 +105,27 @@
                 </select>
             </div>
             <div class="auth-form-group">
-                <label class="auth-label">Teléfono <span class="auth-label-hint">(opcional)</span></label>
-                <input class="auth-input" id="reg-phone" type="tel" placeholder="+593…" autocomplete="tel">
+                <label class="auth-label" for="reg-phone">Teléfono <span class="auth-label-hint">(opcional)</span></label>
+                <input class="auth-input" id="reg-phone" name="phone" type="tel" placeholder="+593…" autocomplete="tel">
             </div>
         </div>
         <div class="auth-form-group">
-            <label class="auth-label">Email</label>
-            <input class="auth-input" id="reg-email" type="email" placeholder="tu@email.com" autocomplete="email">
+            <label class="auth-label" for="reg-email">Email</label>
+            <input class="auth-input" id="reg-email" name="email" type="email" placeholder="tu@email.com"
+                   autocomplete="email" autocapitalize="none" spellcheck="false" required>
         </div>
         <div class="auth-form-group">
-            <label class="auth-label">Contraseña</label>
-            <input class="auth-input" id="reg-pass" type="password" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+            <label class="auth-label" for="reg-pass">Contraseña</label>
+            <div class="password-group">
+                <input class="auth-input" id="reg-pass" name="password" type="password"
+                       placeholder="Mínimo 6 caracteres" autocomplete="new-password" minlength="6" required>
+                <button type="button" class="toggle-pass-btn" onclick="togglePassword('reg-pass', this)">👁️</button>
+            </div>
         </div>
         <div id="auth-reg-err" class="auth-err"></div>
-        <button class="auth-submit-btn" onclick="handleRegisterExtended()">Crear cuenta →</button>
-        <p class="auth-switch-text">¿Ya tienes cuenta? <button onclick="switchAuthTab('login')">Inicia sesión</button></p>
-    </div>
+        <button type="submit" class="auth-submit-btn">Crear cuenta →</button>
+        <p class="auth-switch-text">¿Ya tienes cuenta? <button type="button" onclick="switchAuthTab('login')">Inicia sesión</button></p>
+    </form>
 </div>
 
 <div id="profile-overlay" class="auth-overlay" onclick="closeProfileSuccess()" hidden></div>
@@ -255,7 +267,7 @@
             <button class="nav-auth-btn ghost" onclick="openAuth('login')">Entrar</button>
             <button class="nav-auth-btn solid" onclick="openAuth('register')">Registrarse</button>
         </div>
-        <div id="auth-logged-in" class="auth-user-pill" style="display:none" onclick="openUserMenu()">
+        <div id="auth-logged-in" class="auth-user-pill" style="display:none" onclick="openUserMenu(event)">
             <span class="auth-avatar" id="auth-avatar">A</span>
             <span class="auth-username" id="auth-username">Usuario</span>
             <div class="auth-user-dropdown" id="user-dropdown">
@@ -323,37 +335,37 @@
             <div class="cat-card-bg"></div><div class="cat-card-overlay"></div>
             <div class="cat-glow" style="background:radial-gradient(circle,rgba(160,80,255,.35) 0%,transparent 70%)"></div>
             <div class="cat-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M9.663 17h4.673M12 3v1m6.364 1.636-.707.707M21 12h-1M4 12H3m3.343-5.657-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg></div>
-            <div class="cat-info"><div class="cat-name">Fantasía</div><div class="cat-count" id="cnt-Fantasía">6 títulos</div></div>
+            <div class="cat-info"><div class="cat-name">Fantasía</div><div class="cat-count" id="cnt-Fantasía">0 títulos</div></div>
         </div>
         <div class="cat-card" onclick="filterByGenre('Ciencia Ficción')" style="--cat-bg:linear-gradient(155deg,#061828 0%,#0a2a4a 50%,#030d1a 100%)">
             <div class="cat-card-bg"></div><div class="cat-card-overlay"></div>
             <div class="cat-glow" style="background:radial-gradient(circle,rgba(0,140,255,.3) 0%,transparent 70%)"></div>
             <div class="cat-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg></div>
-            <div class="cat-info"><div class="cat-name">Ciencia Ficción</div><div class="cat-count" id="cnt-Ciencia Ficción">6 títulos</div></div>
+            <div class="cat-info"><div class="cat-name">Ciencia Ficción</div><div class="cat-count" id="cnt-Ciencia Ficción">0 títulos</div></div>
         </div>
         <div class="cat-card" onclick="filterByGenre('Thriller')" style="--cat-bg:linear-gradient(155deg,#1a0505 0%,#350a0a 50%,#0a0202 100%)">
             <div class="cat-card-bg"></div><div class="cat-card-overlay"></div>
             <div class="cat-glow" style="background:radial-gradient(circle,rgba(220,40,40,.28) 0%,transparent 70%)"></div>
             <div class="cat-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/><path d="M12 5v2M12 17v2M5 12H3M21 12h-2"/></svg></div>
-            <div class="cat-info"><div class="cat-name">Thriller</div><div class="cat-count" id="cnt-Thriller">6 títulos</div></div>
+            <div class="cat-info"><div class="cat-name">Thriller</div><div class="cat-count" id="cnt-Thriller">0 títulos</div></div>
         </div>
-        <div class="cat-card" onclick="filterByGenre('Literatura')" style="--cat-bg:linear-gradient(155deg,#071a0f 0%,#0d2e18 50%,#030d08 100%)">
+        <div class="cat-card" onclick="filterByGenre('Tecnología')" style="--cat-bg:linear-gradient(155deg,#071a14 0%,#0d2e25 50%,#030d0a 100%)">
             <div class="cat-card-bg"></div><div class="cat-card-overlay"></div>
-            <div class="cat-glow" style="background:radial-gradient(circle,rgba(40,180,90,.25) 0%,transparent 70%)"></div>
-            <div class="cat-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
-            <div class="cat-info"><div class="cat-name">Literatura</div><div class="cat-count" id="cnt-Literatura">9 títulos</div></div>
+            <div class="cat-glow" style="background:radial-gradient(circle,rgba(40,180,130,.25) 0%,transparent 70%)"></div>
+            <div class="cat-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg></div>
+            <div class="cat-info"><div class="cat-name">Tecnología</div><div class="cat-count" id="cnt-Tecnología">0 títulos</div></div>
         </div>
         <div class="cat-card" onclick="filterByGenre('No Ficción')" style="--cat-bg:linear-gradient(155deg,#1a1505 0%,#2e2208 50%,#0a0802 100%)">
             <div class="cat-card-bg"></div><div class="cat-card-overlay"></div>
             <div class="cat-glow" style="background:radial-gradient(circle,rgba(201,168,76,.3) 0%,transparent 70%)"></div>
             <div class="cat-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M2 20h20M5 20V10l7-7 7 7v10"/><rect x="9" y="14" width="6" height="6"/></svg></div>
-            <div class="cat-info"><div class="cat-name">No Ficción</div><div class="cat-count" id="cnt-No Ficción">6 títulos</div></div>
+            <div class="cat-info"><div class="cat-name">No Ficción</div><div class="cat-count" id="cnt-No Ficción">0 títulos</div></div>
         </div>
-        <div class="cat-card" onclick="quickSearch('Clásico'); scrollToBooks()" style="--cat-bg:linear-gradient(155deg,#15100a 0%,#241a0d 50%,#080503 100%)">
+        <div class="cat-card" onclick="filterByGenre('Manga')" style="--cat-bg:linear-gradient(155deg,#1a0510 0%,#2d0d1e 50%,#0f0208 100%)">
             <div class="cat-card-bg"></div><div class="cat-card-overlay"></div>
-            <div class="cat-glow" style="background:radial-gradient(circle,rgba(201,168,76,.22) 0%,transparent 70%)"></div>
-            <div class="cat-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg></div>
-            <div class="cat-info"><div class="cat-name">Clásicos</div><div class="cat-count">Obras inmortales</div></div>
+            <div class="cat-glow" style="background:radial-gradient(circle,rgba(201,80,120,.22) 0%,transparent 70%)"></div>
+            <div class="cat-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M12 20h9M16.5 4.5l4 4-11 11-4 1 1-4 10-11z"/></svg></div>
+            <div class="cat-info"><div class="cat-name">Manga</div><div class="cat-count" id="cnt-Manga">0 títulos</div></div>
         </div>
     </div>
 </section>
@@ -396,7 +408,8 @@
         <button class="filter-tab active" onclick="filterBooks('all')">Todos</button>
         <button class="filter-tab" onclick="filterBooks('Fantasía')">Fantasía</button>
         <button class="filter-tab" onclick="filterBooks('Ciencia Ficción')">Ciencia Ficción</button>
-        <button class="filter-tab" onclick="filterBooks('Literatura')">Literatura</button>
+        <button class="filter-tab" onclick="filterBooks('Manga')">Manga</button>
+        <button class="filter-tab" onclick="filterBooks('Tecnología')">Tecnología</button>
         <button class="filter-tab" onclick="filterBooks('No Ficción')">No Ficción</button>
         <button class="filter-tab" onclick="filterBooks('Thriller')">Thriller</button>
     </div>

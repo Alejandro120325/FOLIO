@@ -5,6 +5,7 @@
     --gold:#c9a84c; --gold2:#e8c97a; --gold-dim:#8b6f2e;
     --cream:#f5efe0; --muted:#888; --border:#2a2a35;
     --serif:'Playfair Display',serif; --cond:'Cormorant Garamond',serif; --mono:'Space Mono',monospace;
+    --sans:'Roboto','Open Sans','Segoe UI',system-ui,-apple-system,sans-serif;
     --ease-out:cubic-bezier(0.16,1,0.3,1);
 }
 
@@ -65,9 +66,32 @@ button, a, [onclick], .book-card {
 .auth-tab.active::after{transform:scaleX(1)}
 .auth-form-group{margin-bottom:1.2rem}
 .auth-label{font-family:var(--mono);font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:.4rem}
-.auth-input{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--cream);padding:.8rem 1rem;font-family:var(--cond);font-size:1rem;outline:none;transition:border-color .2s,background .2s;font-style:italic}
-.auth-input:focus{border-color:var(--gold);background:rgba(201,168,76,.04)}
-.auth-input::placeholder{color:#444;font-style:italic}
+.auth-input{
+    width:100%;
+    background:rgba(255,255,255,.04);
+    border:1px solid var(--border);
+    color:var(--cream);
+    padding:.8rem 1rem;
+    font-family:var(--sans);
+    font-size:.92rem;
+    font-weight:400;
+    line-height:1.4;
+    outline:none;
+    transition:border-color .2s, background .2s;
+    border-radius:3px;
+}
+.auth-input:focus{border-color:var(--gold);background:rgba(201,168,76,.05)}
+.auth-input::placeholder{color:rgba(245,239,224,.45);font-style:normal}
+/* Options dropdown — explicit color/background para forzar contraste
+   en todos los browsers (Chrome/Edge respetan estos atributos en option) */
+.auth-input option,
+select.auth-input option{
+    background:var(--surface);
+    color:var(--cream);
+    font-family:var(--sans);
+    font-style:normal;
+    padding:.6rem;
+}
 .auth-err{font-family:var(--mono);font-size:.6rem;color:#e05555;min-height:.9rem;letter-spacing:.06em;margin-top:.3rem}
 .auth-submit-btn{width:100%;background:var(--gold);color:var(--obsidian);padding:.9rem;font-family:var(--mono);font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;font-weight:700;border:none;transition:background .2s,transform .2s;margin-top:1.2rem}
 .auth-submit-btn:hover{background:var(--gold2);transform:translateY(-1px)}
@@ -85,8 +109,8 @@ button, a, [onclick], .book-card {
 .auth-user-pill{display:flex;align-items:center;gap:.6rem;background:rgba(201,168,76,.1);border:1px solid var(--gold-dim);padding:.4rem .9rem;border-radius:40px;position:relative}
 .auth-avatar{width:26px;height:26px;border-radius:50%;background:var(--gold);color:var(--obsidian);font-family:var(--serif);font-size:.8rem;font-weight:700;display:flex;align-items:center;justify-content:center}
 .auth-username{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--cream)}
-.auth-user-dropdown{position:absolute;top:calc(100% + .5rem);right:0;background:var(--surface);border:1px solid var(--border);padding:.5rem;min-width:140px;z-index:10;opacity:0;pointer-events:none;transform:translateY(-8px);transition:all .25s}
-.auth-user-pill:hover .auth-user-dropdown{opacity:1;pointer-events:all;transform:translateY(0)}
+.auth-user-dropdown{position:absolute;top:calc(100% + .5rem);right:0;background:var(--surface);border:1px solid var(--border);padding:.5rem;min-width:160px;z-index:10;opacity:0;pointer-events:none;transform:translateY(-8px);transition:opacity .22s,transform .22s}
+.auth-user-dropdown.open{opacity:1;pointer-events:all;transform:translateY(0)}
 .auth-user-dropdown button{width:100%;background:none;border:none;color:var(--muted);font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;padding:.5rem .8rem;text-align:left;transition:color .2s}
 .auth-user-dropdown button:hover{color:var(--cream)}
 
@@ -208,9 +232,21 @@ button, a, [onclick], .book-card {
 .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
 .form-group{display:flex;flex-direction:column;gap:.35rem;margin-bottom:.7rem}
 .form-label{font-family:var(--mono);font-size:.6rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)}
-.form-input{background:transparent;border:1px solid var(--border);color:var(--cream);padding:.7rem 1rem;font-family:var(--cond);font-size:1rem;outline:none;transition:border-color .2s;font-style:italic}
+.form-input{
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--cream);
+    padding:.7rem 1rem;
+    font-family:var(--sans);
+    font-size:.92rem;
+    font-weight:400;
+    outline:none;
+    transition:border-color .2s;
+    border-radius:3px;
+}
 .form-input:focus{border-color:var(--gold)}
-.form-input::placeholder{color:#444;font-style:italic}
+.form-input::placeholder{color:rgba(245,239,224,.4);font-style:normal}
+.form-input option{background:var(--surface);color:var(--cream);font-family:var(--sans)}
 .form-input.error{border-color:#c44}
 .form-error{font-family:var(--mono);font-size:.55rem;color:#c44;letter-spacing:.06em;min-height:.85rem}
 .payment-methods{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem}
@@ -1068,17 +1104,17 @@ nav.scrolled{background:rgba(8,8,8,.92);box-shadow:0 4px 30px rgba(0,0,0,.5)}
 
 /* ── Modo claro (toggle desde theme-switcher) ───────────────────── */
 [data-theme="light"]{
-    /* Paleta platinum / off-white estilo Apple — fatiga visual mínima */
-    --obsidian:#f5f5f7;   /* fondo principal, platinum suave */
-    --deep:#ececef;       /* secciones más profundas */
-    --surface:#fbfbfd;    /* tarjetas y modales */
-    --surface2:#eef0f3;   /* superficies levemente recesadas */
-    --gold:#9a7820;       /* dorado más oscuro para contraste sobre claro */
+    /* Paleta off-white / Bootstrap gray-50 — profesional y tenue */
+    --obsidian:#f8f9fa;   /* fondo principal — Bootstrap gray-50 */
+    --deep:#e9ecef;       /* secciones más profundas — gray-200 */
+    --surface:#ffffff;    /* tarjetas y modales sobre fondo gris */
+    --surface2:#f1f3f5;   /* superficies levemente recesadas — gray-100 */
+    --gold:#9a7820;       /* dorado oscurecido para contraste */
     --gold2:#b89540;
     --gold-dim:#6f5616;
-    --cream:#1d1d1f;      /* texto principal — gris carbón profundo */
-    --muted:#6e6e73;      /* texto secundario */
-    --border:#d6d6db;     /* bordes neutros */
+    --cream:#212529;      /* texto principal — gray-900 */
+    --muted:#6c757d;      /* texto secundario — gray-600 */
+    --border:#dee2e6;     /* bordes neutros — gray-300 */
 }
 [data-theme="light"] html,
 [data-theme="light"] body{
@@ -1106,11 +1142,11 @@ nav.scrolled{background:rgba(8,8,8,.92);box-shadow:0 4px 30px rgba(0,0,0,.5)}
 
 /* Sobrescribir backgrounds hardcoded que no usan variables */
 [data-theme="light"] nav{
-    background:rgba(245,245,247,.78)!important;
+    background:rgba(248,249,250,.78)!important;
     border-bottom:1px solid rgba(0,0,0,.06);
 }
 [data-theme="light"] nav.scrolled{
-    background:rgba(245,245,247,.92)!important;
+    background:rgba(248,249,250,.92)!important;
     box-shadow:0 1px 0 rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.04);
 }
 [data-theme="light"] .nav-links a{color:#5a5a5a}
@@ -1155,12 +1191,23 @@ nav.scrolled{background:rgba(8,8,8,.92);box-shadow:0 4px 30px rgba(0,0,0,.5)}
 [data-theme="light"] .auth-input,
 [data-theme="light"] .form-input,
 [data-theme="light"] select.auth-input{
-    background:#fff;
-    color:var(--cream);
+    background:#fcfcfd;        /* off-white sutil, no blanco puro */
+    color:#212529;             /* gray-900, contraste AAA */
     border:1px solid var(--border);
+    font-family:var(--sans);
 }
 [data-theme="light"] .auth-input::placeholder,
-[data-theme="light"] .form-input::placeholder{color:#999}
+[data-theme="light"] .form-input::placeholder{
+    color:#6c757d;             /* gray-600, legible */
+    font-style:normal;
+}
+[data-theme="light"] .auth-input option,
+[data-theme="light"] .form-input option,
+[data-theme="light"] select.auth-input option{
+    background:#fcfcfd;
+    color:#212529;
+    font-family:var(--sans);
+}
 [data-theme="light"] .auth-label,
 [data-theme="light"] .checkout-section-title{color:var(--gold-dim)}
 [data-theme="light"] .auth-tab{color:var(--muted)}
@@ -1340,7 +1387,10 @@ select.auth-input{
     text-align:center;
     background:var(--surface);
     border:1px solid var(--border);
-    z-index:301;
+
+    /* 🔥 EL CAMBIO ESTÁ AQUÍ 🔥 (Antes estaba en 301) */
+    z-index:405;
+
     opacity:0;
     pointer-events:none;
     transition:transform .45s var(--ease-out), opacity .3s;
@@ -1873,3 +1923,33 @@ select.auth-input{
     background:#fff;color:var(--cream);border-color:var(--border)
 }
 [data-theme="light"] .emp-form-overlay{background:rgba(120,90,40,.35)}
+
+/* ── PASSWORD EYE ICON ───────────────────────────────────────── */
+.password-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+.password-group .auth-input {
+    padding-right: 2.8rem; /* Espacio para que el texto no toque el ojito */
+}
+.toggle-pass-btn {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 2.8rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: var(--muted);
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.toggle-pass-btn:hover {
+    color: var(--gold);
+}

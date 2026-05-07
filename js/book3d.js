@@ -3,8 +3,7 @@
 // ══ VITRINA 3D — libros como objetos volumétricos ════════════════════
 // Renderiza una selección de libros del catálogo como cuerpos 3D reales
 // (front, back, lomo, cantos) usando CSS transform-style: preserve-3d.
-// GSAP anima entrada y hover. La textura de la portada viene de
-// book.cover_url (columna books.cover_url en la DB).
+// GSAP anima entrada y hover. La textura de la portada viene de Open Library (ISBN)
 
 (function () {
     const SHOWCASE_LIMIT = 8;
@@ -26,10 +25,19 @@
         const author = escapeHtml(book.author);
         const badge  = escapeHtml(book.badge || '');
         const bg     = fallbackBg(book);
-        // Si hay cover_url usamos imagen real como textura de la portada;
-        // si no, usamos un canvas-like compuesto por gradient + texto.
-        const coverImg = book.cover_url
-            ? `<img class="b3d-cover-img" src="${escapeHtml(book.cover_url)}" alt="" loading="lazy" onerror="this.remove()">`
+
+        // 🔥 LA MAGIA AQUÍ: Construir la URL usando el ISBN que inyectamos en Supabase
+        let imgSrc = '';
+        if (book.isbn) {
+            imgSrc = `https://covers.openlibrary.org/b/isbn/${escapeHtml(book.isbn)}-L.jpg?default=false`;
+        } else if (book.cover_url) {
+            imgSrc = escapeHtml(book.cover_url);
+        }
+
+        // Si la imagen falla (404 de OpenLibrary), el onerror="this.remove()"
+        // borrará la etiqueta <img> y dejará ver tu diseño CSS del fondo.
+        const coverImg = imgSrc
+            ? `<img class="b3d-cover-img" src="${imgSrc}" alt="" loading="lazy" onerror="this.remove()">`
             : '';
 
         return `
@@ -71,7 +79,7 @@
             if (hasGsap) {
                 window.gsap.to(el, { duration: dur, ease, ...props });
             } else {
-                // Fallback CSS — se queda corto pero no rompe nada
+                // Fallback CSS
                 const t = [];
                 if (props.rotationY != null) t.push(`rotateY(${props.rotationY}deg)`);
                 if (props.rotationX != null) t.push(`rotateX(${props.rotationX}deg)`);
@@ -131,8 +139,6 @@
     }
 
     function pickShowcaseBooks(books) {
-        // Prioriza los que tienen descuento activo (oferta visible)
-        // y completa con los mejor calificados / con badge.
         const withDiscount = books.filter(b => +b.active_discount > 0 || /-\d/.test(b.badge || ''));
         const rest         = books.filter(b => !withDiscount.includes(b));
         rest.sort((a, b) => (+b.rating || 0) - (+a.rating || 0));

@@ -1,6 +1,13 @@
 'use strict';
 
+// 1. Cargar variables de entorno asegurando la ruta exacta
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+
+// DIAGNÓSTICO RÁPIDO PARA LA TERMINAL
+const dbUrl = process.env.DATABASE_URL;
+console.log('\n--- DIAGNÓSTICO DE CONEXIÓN ---');
+console.log(dbUrl ? `✅ DATABASE_URL detectada: ${dbUrl.substring(0, 35)}...` : '❌ ERROR: DATABASE_URL no encontrada en el .env');
+console.log('-------------------------------\n');
 
 const express = require('express');
 const cors    = require('cors');
@@ -57,8 +64,6 @@ async function ensureSchemaIfEmpty() {
 }
 
 async function ensureMigrations() {
-    // Migraciones idempotentes: views, índices full-text, extensiones.
-    // Se aplican en cada arranque; si ya existen, no pasa nada.
     const migrations = [
         'migration_001_views_and_search.sql',
         'migration_002_user_profile.sql'
@@ -80,7 +85,6 @@ async function ensureSeedBooksIfEmpty() {
         console.log('[BOOT] Tabla books vacía — cargando seed.sql...');
         try {
             const sql = fs.readFileSync(path.join(__dirname, 'sql', 'seed.sql'), 'utf8');
-            // ejecutar solo los INSERT INTO books del seed
             const booksOnly = sql
                 .split(/;\s*\n/)
                 .filter(s => /INSERT\s+INTO\s+books/i.test(s))
@@ -103,10 +107,9 @@ async function start() {
 ║  ❌ NO SE PUDO CONECTAR A POSTGRESQL                           ║
 ║                                                                ║
 ║  Verifica que:                                                 ║
-║  1. PostgreSQL esté corriendo                                  ║
-║  2. La base "${(process.env.DB_NAME || 'folio_db').padEnd(48)}"║
-║     exista (créala con: CREATE DATABASE folio_db;)             ║
-║  3. El usuario / contraseña en .env sean correctos             ║
+║  1. La contraseña en el .env no tenga caracteres especiales    ║
+║     sin transformar (ej. si es Alejo#20, pon Alejo%2320)       ║
+║  2. Tengas conexión a internet para alcanzar Supabase          ║
 ║                                                                ║
 ║  Detalle: ${e.message}
 ╚════════════════════════════════════════════════════════════════╝
@@ -127,11 +130,6 @@ async function start() {
 ║  Web:    http://localhost:${PORT}
 ║  API:    http://localhost:${PORT}/api
 ║  Health: http://localhost:${PORT}/api/health
-║                                                                ║
-║  Credenciales de prueba:                                       ║
-║    admin@folio.com    / admin123                               ║
-║    empleado@folio.com / empleado123                            ║
-║    cliente@folio.com  / cliente123                             ║
 ╚════════════════════════════════════════════════════════════════╝
 `);
     });
