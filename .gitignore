@@ -1,0 +1,11 @@
+# Dependencias (Peso)
+node_modules/
+
+# Secretos (Seguridad)
+.env
+
+# IDEs (Basura local)
+.idea/
+.vscode/
+.claude/
+*.log
