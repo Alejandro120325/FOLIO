@@ -106,7 +106,7 @@
             </div>
             <div class="auth-form-group">
                 <label class="auth-label" for="reg-phone">Teléfono <span class="auth-label-hint">(opcional)</span></label>
-                <input class="auth-input" id="reg-phone" name="phone" type="tel" placeholder="+593…" autocomplete="tel">
+                <input class="auth-input" id="reg-phone" name="phone" type="tel" placeholder="0991234567" autocomplete="tel" maxlength="10" pattern="^09[0-9]{8}$" title="Debe empezar con 09 y tener 10 dígitos">
             </div>
         </div>
         <div class="auth-form-group">
@@ -183,7 +183,7 @@
                     <div class="form-group"><label class="form-label">Nombre completo *</label><input class="form-input" id="ch-name" type="text" placeholder="Tu nombre"><span class="form-error" id="err-name"></span></div>
                     <div class="form-group"><label class="form-label">Email *</label><input class="form-input" id="ch-email" type="email" placeholder="tu@email.com"><span class="form-error" id="err-email"></span></div>
                 </div>
-                <div class="form-group"><label class="form-label">Teléfono</label><input class="form-input" id="ch-phone" type="tel" placeholder="+593 99 999 9999"></div>
+                <div class="form-group"><label class="form-label">Teléfono</label><input class="form-input" id="ch-phone" type="tel" placeholder="0991234567" maxlength="10" pattern="^09[0-9]{8}$" title="Debe empezar con 09 y tener 10 dígitos"></div>
             </div>
             <div class="checkout-section">
                 <h4 class="checkout-section-title">Dirección de envío</h4>

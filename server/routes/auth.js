@@ -5,10 +5,10 @@ const bcrypt  = require('bcryptjs');
 const { query } = require('../db');
 const { signToken, requireAuth } = require('../middleware/auth');
 const { validateCedulaEC }       = require('../utils/cedula');
+const { validarTelefonoEcuador } = require('../utils/telefono');
 
 const ALLOWED_MARITAL = ['soltero', 'casado', 'viudo'];
-// Aceptamos data URLs (base64) o URLs http(s); limitamos peso de avatar.
-const MAX_AVATAR_LEN = 1_500_000; // ~1.1MB tras decodear base64
+const MAX_AVATAR_LEN = 1_500_000;
 
 function publicUser(u) {
     return {
@@ -24,8 +24,6 @@ function publicUser(u) {
     };
 }
 
-// POST /api/auth/register  → solo crea cuentas con rol "client".
-// Acepta opcionalmente cedula, marital_status, avatar_url, phone.
 router.post('/register', async (req, res) => {
     try {
         const {
@@ -41,6 +39,13 @@ router.post('/register', async (req, res) => {
         if (cedula != null && cedula !== '') {
             const v = validateCedulaEC(String(cedula));
             if (!v.ok) return res.status(400).json({ error: `Cédula inválida: ${v.reason}` });
+        }
+
+        // 🚨 NUEVO ESCUDO: Validación de Teléfono Ecuatoriano
+        if (phone != null && phone !== '') {
+            if (!validarTelefonoEcuador(String(phone))) {
+                return res.status(400).json({ error: 'Número de teléfono inválido. Debe empezar con 09 y tener 10 dígitos.' });
+            }
         }
 
         if (marital_status && !ALLOWED_MARITAL.includes(String(marital_status).toLowerCase())) {
@@ -120,7 +125,6 @@ router.get('/me', requireAuth, async (req, res) => {
     res.json({ user: publicUser(r.rows[0]) });
 });
 
-// PUT /api/auth/me  → actualiza datos del propio usuario (perfil).
 // Permite cambiar avatar, teléfono, estado civil, cédula (si aún no la tiene), nombre.
 router.put('/me', requireAuth, async (req, res) => {
     try {
@@ -132,9 +136,14 @@ router.put('/me', requireAuth, async (req, res) => {
             if (!n) return res.status(400).json({ error: 'Nombre vacío' });
             vals.push(n); sets.push(`name = $${vals.length}`);
         }
+
         if (phone !== undefined) {
+            if (phone && !validarTelefonoEcuador(String(phone))) {
+                return res.status(400).json({ error: 'Número celular inválido. Usa el formato: 0991234567' });
+            }
             vals.push(phone || null); sets.push(`phone = $${vals.length}`);
         }
+
         if (marital_status !== undefined) {
             const ms = marital_status ? String(marital_status).toLowerCase() : null;
             if (ms && !ALLOWED_MARITAL.includes(ms)) return res.status(400).json({ error: 'Estado civil inválido' });
