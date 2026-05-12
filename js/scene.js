@@ -15,7 +15,6 @@ class FolioScene {
         this.clock = new THREE.Clock();
         this._setup();
         this._lights();
-        this._books();
         this._particles();
         this._events();
         this._animate();

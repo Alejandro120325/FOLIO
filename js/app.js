@@ -1039,8 +1039,18 @@ function adaptDbBook(b) {
         ratingValue = parseFloat(savedRating); ratingSubmitted = true;
     }
 
-    // 🔥 EJECUTAMOS LA CONEXIÓN A SUPABASE 🔥
-    bootstrapBackend().then(() => {
-        console.log('[FRONTEND] Catálogo oficial cargado desde Supabase.');
-    });
+    bootstrapBackend()
+        .then(() => {
+            console.log('[FRONTEND] Catálogo oficial cargado desde Supabase.');
+        })
+        .catch(() => {
+            // Plan B: Si el internet o Supabase fallan, mostramos los locales para no dejar la página vacía
+            if (window.folioSceneInstance) window.folioSceneInstance.updateBooks();
+        })
+        .finally(() => {
+            // Red de seguridad: Forzamos el renderizado si la escena sigue vacía
+            if (window.folioSceneInstance && window.folioSceneInstance.bookMeshes.length === 0) {
+                window.folioSceneInstance.updateBooks();
+            }
+        });
 })();
