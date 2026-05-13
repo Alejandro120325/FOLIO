@@ -3,6 +3,7 @@
 const router = require('express').Router();
 const { pool, query } = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
+const { validarTarjetaLuhn } = require('../utils/tarjeta');
 
 function genCode() {
     return 'FOL-' + Date.now().toString(36).toUpperCase().slice(-8);
@@ -12,11 +13,12 @@ function genCode() {
 router.post('/', async (req, res) => {
     const client = await pool.connect();
     try {
+        // Extraemos cardNumber también
         const {
             items,
             name, email, phone,
             shipping_address, shipping_city, shipping_zip,
-            payment_method
+            payment_method, cardNumber
         } = req.body || {};
 
         if (!Array.isArray(items) || !items.length) return res.status(400).json({ error: 'Carrito vacío' });
@@ -24,6 +26,13 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'Faltan datos de envío' });
         }
         if (!payment_method) return res.status(400).json({ error: 'Selecciona método de pago' });
+
+        // 🚨 ESCUDO: Validación de Tarjeta Luhn 🚨
+        if (payment_method === 'card') {
+            if (!validarTarjetaLuhn(cardNumber)) {
+                return res.status(400).json({ error: 'El número de tarjeta es inválido.' });
+            }
+        }
 
         let user_id = null;
         const auth = req.headers.authorization || '';

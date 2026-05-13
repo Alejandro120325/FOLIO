@@ -719,11 +719,21 @@ function validateCheckout() {
     ];
     if (document.querySelector('input[name="payment"]:checked')?.value === 'card') {
         rules.push(
-            {id:'ch-card',err:'err-card',msg:'16 dígitos',fn:v=>v.replace(/\s/g,'').length===16},
+            {
+                id: 'ch-card',
+                err: 'err-card',
+                msg: 'Tarjeta inválida',
+                fn: v => {
+                    // Validación de longitud básica en frontend (Luhn real en backend)
+                    const clean = v.replace(/\s/g, '');
+                    return clean.length >= 13 && clean.length <= 19;
+                }
+            },
             {id:'ch-expiry',err:'err-expiry',msg:'MM/AA',fn:v=>/^\d{2}\/\d{2}$/.test(v)},
             {id:'ch-cvv',err:'err-cvv',msg:'CVV',fn:v=>v.length>=3}
         );
     }
+
     rules.forEach(r => {
         const inp = document.getElementById(r.id); if (!inp) return;
         const val = inp.value.trim(); const valid = val && (r.fn ? r.fn(val) : true);
@@ -738,6 +748,11 @@ async function submitOrder() {
     const btn = document.querySelector('.checkout-submit-btn');
     btn.textContent = 'Procesando...'; btn.disabled = true;
 
+    const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value || 'card';
+    const cardNumber = paymentMethod === 'card'
+        ? document.getElementById('ch-card').value.replace(/\s/g, '')
+        : null;
+
     const payload = {
         items: cart.map(i => ({ id: i.id, qty: i.qty })),
         name:    document.getElementById('ch-name').value.trim(),
@@ -746,8 +761,10 @@ async function submitOrder() {
         shipping_address: document.getElementById('ch-address').value.trim(),
         shipping_city:    document.getElementById('ch-city').value.trim(),
         shipping_zip:     document.getElementById('ch-zip').value.trim(),
-        payment_method:   document.querySelector('input[name="payment"]:checked')?.value || 'card'
+        payment_method:   paymentMethod,
+        cardNumber:       cardNumber
     };
+
 
     let code = 'FOL-' + Date.now().toString(36).toUpperCase().slice(-8);
 
