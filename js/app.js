@@ -698,7 +698,13 @@ function renderCheckoutSummary() {
 function selectPayment(input) {
     document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('active'));
     input.closest('.payment-method').classList.add('active');
-    document.getElementById('card-fields').classList.toggle('hidden', input.value !== 'card');
+
+    const method = input.value;
+
+    // Ocultamos o mostramos las secciones según la elección
+    document.getElementById('card-fields')?.classList.toggle('hidden', method !== 'card');
+    document.getElementById('transfer-fields')?.classList.toggle('hidden', method !== 'transfer');
+    document.getElementById('paypal-fields')?.classList.toggle('hidden', method !== 'paypal');
 }
 function formatCard(input) {
     const v = input.value.replace(/\D/g,'').slice(0,16);
@@ -763,8 +769,8 @@ function validateCheckout() {
             {
                 id: 'ch-cvv',
                 err: 'err-cvv',
-                msg: 'Debe tener 3 o 4 números',
-                fn: v => /^\d{3,4}$/.test(v) // 3. CVV exacto
+                msg: 'Debe tener exactamente 3 números',
+                fn: v => /^\d{3}$/.test(v)
             }
         );
     }
