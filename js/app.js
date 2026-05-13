@@ -696,16 +696,24 @@ function renderCheckoutSummary() {
     document.getElementById('co-total').textContent = `$${(sub + (sub >= 40 ? 0 : 4.99)).toFixed(2)}`;
 }
 function selectPayment(input) {
+    // 1. Quitar la clase 'active' a todos y ponérsela al que recibió el clic
     document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('active'));
     input.closest('.payment-method').classList.add('active');
 
+    // 2. Saber qué método se eligió
     const method = input.value;
 
-    // Ocultamos o mostramos las secciones según la elección
-    document.getElementById('card-fields')?.classList.toggle('hidden', method !== 'card');
-    document.getElementById('transfer-fields')?.classList.toggle('hidden', method !== 'transfer');
-    document.getElementById('paypal-fields')?.classList.toggle('hidden', method !== 'paypal');
+    // 3. Obtener los 3 recuadros
+    const cardFields = document.getElementById('card-fields');
+    const transferFields = document.getElementById('transfer-fields');
+    const paypalFields = document.getElementById('paypal-fields');
+
+    // 4. Mostrar solo el que corresponde y ocultar los demás
+    if (cardFields) cardFields.style.display = (method === 'card') ? 'block' : 'none';
+    if (transferFields) transferFields.style.display = (method === 'transfer') ? 'block' : 'none';
+    if (paypalFields) paypalFields.style.display = (method === 'paypal') ? 'block' : 'none';
 }
+
 function formatCard(input) {
     const v = input.value.replace(/\D/g,'').slice(0,16);
     input.value = v.match(/.{1,4}/g)?.join(' ') || v;
