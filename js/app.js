@@ -717,32 +717,73 @@ function validateCheckout() {
         {id:'ch-address',err:'err-address',msg:'Ingresa tu dirección'},
         {id:'ch-city',err:'err-city',msg:'Ingresa tu ciudad'}
     ];
+
     if (document.querySelector('input[name="payment"]:checked')?.value === 'card') {
         rules.push(
             {
                 id: 'ch-card',
                 err: 'err-card',
-                msg: 'Tarjeta inválida',
+                msg: 'Número de tarjeta inválido',
                 fn: v => {
-                    // Validación de longitud básica en frontend (Luhn real en backend)
+                    // 1. Validación Luhn matemática en el frontend
                     const clean = v.replace(/\s/g, '');
-                    return clean.length >= 13 && clean.length <= 19;
+                    if (!/^\d{13,19}$/.test(clean)) return false;
+
+                    let sum = 0, alt = false;
+                    for (let i = clean.length - 1; i >= 0; i--) {
+                        let n = parseInt(clean.charAt(i), 10);
+                        if (alt) { n *= 2; if (n > 9) n -= 9; }
+                        sum += n;
+                        alt = !alt;
+                    }
+                    return sum % 10 === 0;
                 }
             },
-            {id:'ch-expiry',err:'err-expiry',msg:'MM/AA',fn:v=>/^\d{2}\/\d{2}$/.test(v)},
-            {id:'ch-cvv',err:'err-cvv',msg:'CVV',fn:v=>v.length>=3}
+            {
+                id: 'ch-expiry',
+                err: 'err-expiry',
+                msg: 'Fecha vencida o inválida',
+                fn: v => {
+                    // 2. Validación real de fecha (Mes y Año)
+                    if (!/^\d{2}\/\d{2}$/.test(v)) return false;
+
+                    const [m, y] = v.split('/').map(Number);
+                    if (m < 1 || m > 12) return false; // El mes debe ser del 1 al 12
+
+                    const now = new Date();
+                    const currYear = now.getFullYear() % 100; // Año actual (ej. 26)
+                    const currMonth = now.getMonth() + 1;     // Mes actual
+
+                    if (y < currYear) return false; // Año en el pasado
+                    if (y === currYear && m < currMonth) return false; // Este año, pero mes pasado
+
+                    return true;
+                }
+            },
+            {
+                id: 'ch-cvv',
+                err: 'err-cvv',
+                msg: 'Debe tener 3 o 4 números',
+                fn: v => /^\d{3,4}$/.test(v) // 3. CVV exacto
+            }
         );
     }
 
     rules.forEach(r => {
         const inp = document.getElementById(r.id); if (!inp) return;
         const val = inp.value.trim(); const valid = val && (r.fn ? r.fn(val) : true);
+
+        // Esto le agrega la clase CSS "error" a la casilla para ponerla roja
         inp.classList.toggle('error', !valid);
+
+        // Pone el texto rojo debajo
         document.getElementById(r.err).textContent = valid ? '' : r.msg;
+
         if (!valid) ok = false;
     });
     return ok;
 }
+
 async function submitOrder() {
     if (!validateCheckout()) { showToast('Completa todos los campos requeridos'); return; }
     const btn = document.querySelector('.checkout-submit-btn');
