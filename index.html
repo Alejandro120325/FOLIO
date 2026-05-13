@@ -200,18 +200,13 @@
                     <label class="payment-method"><input type="radio" name="payment" value="transfer" onchange="selectPayment(this)"><span class="pm-label">🏦 Transferencia bancaria</span></label>
                     <label class="payment-method"><input type="radio" name="payment" value="paypal" onchange="selectPayment(this)"><span class="pm-label">🅿 PayPal</span></label>
                 </div>
-                <div id="transfer-fields" class="hidden" style="margin-top: 1.5rem; padding: 1.2rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; background: rgba(0,0,0,0.3);">
-                    <p style="font-size: 0.85rem; margin-bottom: 0.8rem; color: #c9a84c; text-transform: uppercase; letter-spacing: 0.1em;">Datos para depósito o transferencia</p>
-                    <ul style="list-style: none; padding: 0; font-size: 0.9rem; color: rgba(255,255,255,0.8); line-height: 1.8;">
-                        <li><strong>Banco:</strong> Pichincha</li>
-                        <li><strong>Tipo de Cuenta:</strong> Corriente</li>
-                        <li><strong>No. de Cuenta:</strong> 2100543290</li>
-                        <li><strong>Titular:</strong> Folio LATAM S.A.</li>
-                        <li><strong>RUC:</strong> 1791234567001</li>
-                    </ul>
-                    <p style="font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 0.5rem;">
-                        * Una vez confirmado el pedido, envía tu comprobante a pagos@folio.com con tu número de orden.
-                    </p>
+
+                <div id="card-fields" class="card-fields" style="display: block; margin-top: 1rem;">
+                    <div class="form-group"><label class="form-label">Número de tarjeta *</label><input class="form-input" id="ch-card" type="text" placeholder="0000 0000 0000 0000" maxlength="19" oninput="formatCard(this)"><span class="form-error" id="err-card"></span></div>
+                    <div class="form-row-2">
+                        <div class="form-group"><label class="form-label">Vencimiento *</label><input class="form-input" id="ch-expiry" type="text" placeholder="MM/AA" maxlength="5" oninput="formatExpiry(this)"><span class="form-error" id="err-expiry"></span></div>
+                        <div class="form-group"><label class="form-label">CVV *</label><input class="form-input" id="ch-cvv" type="text" placeholder="123" maxlength="4"><span class="form-error" id="err-cvv"></span></div>
+                    </div>
                 </div>
 
                 <div id="transfer-fields" style="display: none; margin-top: 1.5rem; padding: 1.2rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; background: rgba(0,0,0,0.3);">
