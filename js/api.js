@@ -1,15 +1,12 @@
 'use strict';
 
 // ══ OPEN LIBRARY API ════════════════════════════════════════════
-// Integración con la API pública de Open Library.
-// Si la API falla, usamos EXTRA_BOOKS_FALLBACK del data.js.
 
 const OPEN_LIBRARY_BASE = 'https://openlibrary.org';
 const API_TIMEOUT_MS = 6000;
 const CACHE_KEY = 'folio-api-cache-v3';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
-// Mapeo de géneros internos → subjects de Open Library
 const GENRE_SUBJECTS = {
     'Fantasía':         'fantasy',
     'Ciencia Ficción':  'science_fiction',
@@ -18,7 +15,6 @@ const GENRE_SUBJECTS = {
     'No Ficción':       'nonfiction'
 };
 
-// Paleta de gradientes para covers generadas
 const GENRE_COLORS = {
     'Fantasía':         ['#3a1a5c','#0f0820'],
     'Ciencia Ficción':  ['#0a2a4a','#04101c'],
