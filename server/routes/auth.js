@@ -35,13 +35,11 @@ router.post('/register', async (req, res) => {
         if (password.length < 6)           return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
         if (!/\S+@\S+\.\S+/.test(email))   return res.status(400).json({ error: 'Email inválido' });
 
-        // Cédula: si llega, validamos algorítmicamente
         if (cedula != null && cedula !== '') {
             const v = validateCedulaEC(String(cedula));
             if (!v.ok) return res.status(400).json({ error: `Cédula inválida: ${v.reason}` });
         }
 
-        // 🚨 NUEVO ESCUDO: Validación de Teléfono Ecuatoriano
         if (phone != null && phone !== '') {
             if (!validarTelefonoEcuador(String(phone))) {
                 return res.status(400).json({ error: 'Número de teléfono inválido. Debe empezar con 09 y tener 10 dígitos.' });
