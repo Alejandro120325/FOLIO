@@ -1,7 +1,6 @@
 'use strict';
 
 // ══ DASHBOARD ADMIN ══════════════════════════════════════════════
-// Renderiza estadísticas, top libros, ingresos mensuales, gestión usuarios.
 
 const Admin = {
     async open() {
