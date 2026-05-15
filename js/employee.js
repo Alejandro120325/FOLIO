@@ -1,8 +1,6 @@
 'use strict';
 
 // ══ DASHBOARD EMPLEADO ═══════════════════════════════════════════
-// CRUD de libros + alta/baja de descuentos.
-
 const Employee = {
     state: { books: [], discounts: [] },
 
