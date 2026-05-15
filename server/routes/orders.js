@@ -13,7 +13,6 @@ function genCode() {
 router.post('/', async (req, res) => {
     const client = await pool.connect();
     try {
-        // Extraemos cardNumber también
         const {
             items,
             name, email, phone,
@@ -27,7 +26,6 @@ router.post('/', async (req, res) => {
         }
         if (!payment_method) return res.status(400).json({ error: 'Selecciona método de pago' });
 
-        // 🚨 ESCUDO: Validación de Tarjeta Luhn 🚨
         if (payment_method === 'card') {
             if (!validarTarjetaLuhn(cardNumber)) {
                 return res.status(400).json({ error: 'El número de tarjeta es inválido.' });
