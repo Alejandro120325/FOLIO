@@ -46,19 +46,17 @@ const FolioBackend = {
     },
 
     // ── Auth ─────────────────────────────────────────────────────
-    async login(email, password) { // ELIMINADO EL PARÁMETRO ROLE
+    async login(email, password) {
         const out = await api('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) });
         setToken(out.token); setStoredUser(out.user);
         return out.user;
     },
     async register(name, email, password) {
-        // Registro mínimo (legacy). El frontend ahora usa _registerExtended.
         const out = await api('/auth/register', { method: 'POST', body: JSON.stringify({ name, email, password, role: 'client' }) });
         setToken(out.token); setStoredUser(out.user);
         return out.user;
     },
-    // Registro extendido: cedula, marital_status, avatar_url, phone.
-    // Devuelve el user completo (no sólo {id,name,email,role}).
+    
     async _registerExtended(payload) {
         const out = await api('/auth/register', { method: 'POST', body: JSON.stringify(payload) });
         setToken(out.token); setStoredUser(out.user);
