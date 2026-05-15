@@ -8,7 +8,6 @@ const { requireAuth, requireRole } = require('../middleware/auth');
 router.use(requireAuth, requireRole('admin'));
 
 // GET /api/admin/stats  → estadísticas para el dashboard.
-// Apoyado en la view v_orders_full para evitar repetir JOINs.
 router.get('/stats', async (req, res) => {
     try {
         const totals = await query(`
