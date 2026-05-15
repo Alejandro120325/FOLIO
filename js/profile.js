@@ -1,9 +1,6 @@
 'use strict';
 
-// ══ PERFIL DE USUARIO — validación, registro extendido y vista éxito ══
-
 // ── Validador de Cédula Ecuatoriana ──────────────────────────────
-// Misma lógica que server/utils/cedula.js (también valida en backend).
 function validateCedulaEC(cedula) {
     if (typeof cedula !== 'string') return { ok: false, reason: 'Cédula debe ser texto' };
     if (!/^\d{10}$/.test(cedula))   return { ok: false, reason: 'Debe tener exactamente 10 dígitos' };
@@ -134,7 +131,6 @@ async function handleRegisterExtended() {
         const out = await window.FolioBackend._registerExtended({
             name, email, password: pass, cedula, marital_status, phone, avatar_url
         });
-        // Cierra el modal de auth y muestra perfil
         if (typeof closeAuth === 'function') closeAuth();
         if (typeof updateAuthUI === 'function') updateAuthUI();
         showProfileSuccess(out);
@@ -193,12 +189,10 @@ function showProfileSuccess(user) {
     document.body.style.overflow = 'hidden';
     overlay.hidden = false;
     modal.hidden   = false;
-    // Forzar repaint antes de añadir .open para que la transición se anime
     void modal.offsetWidth;
     overlay.classList.add('open');
     modal.classList.add('open');
 
-    // GSAP entrada de las filas
     if (window.gsap) {
         window.gsap.fromTo('.profile-row',
             { opacity: 0, x: -18 },
@@ -213,8 +207,6 @@ function closeProfileSuccess() {
     overlay?.classList.remove('open');
     modal?.classList.remove('open');
     document.body.style.overflow = '';
-    // Tras la transición de salida, devolvemos hidden para que el SR no
-    // los anuncie y queden fuera del flujo aunque el CSS no esté cargado.
     setTimeout(() => {
         if (overlay && !overlay.classList.contains('open')) overlay.hidden = true;
         if (modal   && !modal.classList.contains('open'))   modal.hidden   = true;
