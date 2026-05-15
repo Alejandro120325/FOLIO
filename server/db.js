@@ -18,16 +18,12 @@ const pool = new Pool({
 
 pool.on('error', err => console.error('[DB] Error inesperado en el pool de Supabase:', err));
 
-/**
- * Helper para ejecutar consultas SQL de forma simplificada
- */
+//Helper para ejecutar consultas SQL de forma simplificada
 async function query(text, params) {
     return await pool.query(text, params);
 }
 
-/**
- * Asegura que existan los usuarios base en Supabase.
- */
+//Asegura que existan los usuarios base en Supabase.
 async function ensureSeedUsers() {
     const seeds = [
         { name: 'Administrador Folio', email: 'admin@folio.com',    pass: 'admin123',    role: 'admin'    },
@@ -52,9 +48,7 @@ async function ensureSeedUsers() {
     }
 }
 
-/**
- * Verifica la disponibilidad de la base de datos
- */
+//Verifica la disponibilidad de la base de datos
 async function pingDb() {
     const r = await query('SELECT NOW() AS now');
     return r.rows[0].now;
