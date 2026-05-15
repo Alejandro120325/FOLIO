@@ -1,10 +1,6 @@
 'use strict';
 
 // ══ VITRINA 3D — libros como objetos volumétricos ════════════════════
-// Renderiza una selección de libros del catálogo como cuerpos 3D reales
-// (front, back, lomo, cantos) usando CSS transform-style: preserve-3d.
-// GSAP anima entrada y hover. La textura de la portada viene de Open Library (ISBN)
-
 (function () {
     const SHOWCASE_LIMIT = 8;
 
@@ -14,19 +10,16 @@
         }[c]));
     }
 
-    // Convierte el gradient de book.color a algo válido como fallback
     function fallbackBg(book) {
         return book.color || 'linear-gradient(135deg,#1a1a22 0%,#080808 100%)';
     }
 
-    // HTML de un libro 3D individual
     function makeBookHtml(book) {
         const title  = escapeHtml(book.title);
         const author = escapeHtml(book.author);
         const badge  = escapeHtml(book.badge || '');
         const bg     = fallbackBg(book);
 
-        // 🔥 LA MAGIA AQUÍ: Construir la URL usando el ISBN que inyectamos en Supabase
         let imgSrc = '';
         if (book.isbn) {
             imgSrc = `https://covers.openlibrary.org/b/isbn/${escapeHtml(book.isbn)}-L.jpg?default=false`;
@@ -34,8 +27,6 @@
             imgSrc = escapeHtml(book.cover_url);
         }
 
-        // Si la imagen falla (404 de OpenLibrary), el onerror="this.remove()"
-        // borrará la etiqueta <img> y dejará ver tu diseño CSS del fondo.
         const coverImg = imgSrc
             ? `<img class="b3d-cover-img" src="${imgSrc}" alt="" loading="lazy" onerror="this.remove()">`
             : '';
@@ -79,7 +70,6 @@
             if (hasGsap) {
                 window.gsap.to(el, { duration: dur, ease, ...props });
             } else {
-                // Fallback CSS
                 const t = [];
                 if (props.rotationY != null) t.push(`rotateY(${props.rotationY}deg)`);
                 if (props.rotationX != null) t.push(`rotateX(${props.rotationX}deg)`);
