@@ -54,7 +54,6 @@ async function handleLogin() {
         const user = await FolioBackend.login(email, pass);
         closeAuth(); updateAuthUI();
 
-        // 🔮 Redirección inteligente
         if (user.role === 'admin') {
             showToast(`¡Bienvenido al Panel de Control, ${user.name}!`);
             setTimeout(() => { if(window.Admin) Admin.open(); }, 300);
@@ -109,17 +108,14 @@ async function handleRegister() {
         document.getElementById('profile-role').textContent = 'Cliente';
         document.getElementById('profile-date').textContent = new Date().toLocaleDateString();
 
-        // 🔥 TRUCO PARA LA IMAGEN 🔥
         const pAvatar = document.getElementById('profile-avatar');
         if (photoInput.files && photoInput.files[0]) {
-            // Si el usuario subió una foto, la mostramos usando una URL temporal
             const imgUrl = URL.createObjectURL(photoInput.files[0]);
-            pAvatar.textContent = ''; // Quitamos las letras
+            pAvatar.textContent = ''; 
             pAvatar.style.backgroundImage = `url(${imgUrl})`;
             pAvatar.style.backgroundSize = 'cover';
             pAvatar.classList.add('has-image');
         } else {
-            // Si no subió nada, ponemos las iniciales
             pAvatar.textContent = name.substring(0, 2).toUpperCase();
             pAvatar.style.backgroundImage = 'none';
         }
@@ -156,7 +152,6 @@ window.closeProfileSuccess = function() {
     pOverlay.classList.remove('open');
     pModal.classList.remove('open');
 
-    // Esperamos a que termine la animación para ocultarlo del DOM
     setTimeout(() => {
         pOverlay.setAttribute('hidden', 'true');
         pModal.setAttribute('hidden', 'true');
@@ -454,12 +449,7 @@ function closeSearch() {
     document.getElementById('search-overlay-input').value = '';
     document.getElementById('search-results').innerHTML = '';
 }
-// ── Fuzzy matcher ────────────────────────────────────────────────
-// Devuelve un score numérico: 0 = no coincide. Mayor = mejor match.
-//   - Coincidencia exacta de subcadena: score base alto, mejor cuanto antes empieza.
-//   - Subsecuencia (caracteres en orden, no necesariamente contiguos):
-//     score basado en proximidad — caracteres más juntos puntúan más.
-//   - Ignora acentos: "Garcia" matchea "García".
+
 function _foldDiacritics(s) {
     return s.normalize('NFD').replace(/[̀-ͯ]/g, '');
 }
@@ -469,21 +459,17 @@ function fuzzyScore(text, query) {
     const q = _foldDiacritics(query.toLowerCase());
     if (!t) return 0;
 
-    // Match exacto contiguo
     const idx = t.indexOf(q);
     if (idx !== -1) return 1000 + Math.max(0, 50 - idx);
 
-    // Subsecuencia: cada carácter de q aparece en t en orden
     let last = -1, score = 0;
     for (const ch of q) {
         const at = t.indexOf(ch, last + 1);
         if (at === -1) return 0;
-        // gap pequeño = mejor; primer char temprano = mejor
         const gap = at - last - 1;
         score += Math.max(1, 12 - gap);
         last = at;
     }
-    // Bonus si el primer carácter coincide con el inicio del texto
     if (t[0] === q[0]) score += 8;
     return score;
 }
@@ -493,7 +479,6 @@ function handleLiveSearch(query) {
     const c = document.getElementById('search-results');
     if (!q) { c.innerHTML=''; return; }
 
-    // Score multivariable: title pesa más, luego author, luego género/subgénero, badge, isbn, year, tags
     const scored = ALL_BOOKS().map(b => {
         const s =
             fuzzyScore(b.title,    q) * 5 +
@@ -762,14 +747,14 @@ function validateCheckout() {
                     if (!/^\d{2}\/\d{2}$/.test(v)) return false;
 
                     const [m, y] = v.split('/').map(Number);
-                    if (m < 1 || m > 12) return false; // El mes debe ser del 1 al 12
+                    if (m < 1 || m > 12) return false; 
 
                     const now = new Date();
-                    const currYear = now.getFullYear() % 100; // Año actual (ej. 26)
-                    const currMonth = now.getMonth() + 1;     // Mes actual
+                    const currYear = now.getFullYear() % 100; 
+                    const currMonth = now.getMonth() + 1;    
 
-                    if (y < currYear) return false; // Año en el pasado
-                    if (y === currYear && m < currMonth) return false; // Este año, pero mes pasado
+                    if (y < currYear) return false; 
+                    if (y === currYear && m < currMonth) return false; 
 
                     return true;
                 }
@@ -787,10 +772,8 @@ function validateCheckout() {
         const inp = document.getElementById(r.id); if (!inp) return;
         const val = inp.value.trim(); const valid = val && (r.fn ? r.fn(val) : true);
 
-        // Esto le agrega la clase CSS "error" a la casilla para ponerla roja
         inp.classList.toggle('error', !valid);
 
-        // Pone el texto rojo debajo
         document.getElementById(r.err).textContent = valid ? '' : r.msg;
 
         if (!valid) ok = false;
@@ -833,7 +816,6 @@ async function submitOrder() {
             return;
         }
     } else {
-        // Fallback offline: simulamos delay
         await new Promise(r => setTimeout(r, 1200));
     }
 
@@ -1005,7 +987,6 @@ async function bootstrapApiContent() {
 }
 
 // ══ BACKEND BOOTSTRAP ════════════════════════════════════════
-// Si el backend está vivo, reemplazamos los libros locales con los de la DB
 async function bootstrapBackend() {
     if (!window.FolioBackend) return;
     const ok = await FolioBackend.ping();
@@ -1016,13 +997,11 @@ async function bootstrapBackend() {
     try {
         const r = await FolioBackend.listBooks();
         if (r.books && r.books.length) {
-            // Mapear los libros de la DB al formato que espera el frontend
             const mapped = r.books.map(adaptDbBook);
             BOOKS.length = 0; BOOKS.push(...mapped);
             renderBooks();
             observeReveals();
 
-            // 🔥 Le avisamos a la escena 3D que ya llegaron los libros reales
             if (window.folioSceneInstance) {
                 window.folioSceneInstance.updateBooks();
             }
@@ -1116,11 +1095,9 @@ function adaptDbBook(b) {
             console.log('[FRONTEND] Catálogo oficial cargado desde Supabase.');
         })
         .catch(() => {
-            // Plan B: Si el internet o Supabase fallan, mostramos los locales para no dejar la página vacía
             if (window.folioSceneInstance) window.folioSceneInstance.updateBooks();
         })
         .finally(() => {
-            // Red de seguridad: Forzamos el renderizado si la escena sigue vacía
             if (window.folioSceneInstance && window.folioSceneInstance.bookMeshes.length === 0) {
                 window.folioSceneInstance.updateBooks();
             }
