@@ -5,9 +5,6 @@ const { query } = require('../db');
 const { requireAuth, requireRole } = require('../middleware/auth');
 
 // GET /api/books  → catálogo público con descuentos activos aplicados.
-// Lee de la view v_books_with_price (incluye active_discount + effective_price).
-// Si llega ?q= usa búsqueda full-text en español + fallback trigram (ILIKE)
-// para tolerar typos. Si llega ?genre= filtra por género.
 router.get('/', async (req, res) => {
     try {
         const { genre, q } = req.query;
