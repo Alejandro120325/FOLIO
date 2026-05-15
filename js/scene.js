@@ -60,7 +60,6 @@ class FolioScene {
         const tex = new THREE.CanvasTexture(cv);
         tex.anisotropy = 16;
 
-        // Pintamos el diseño elegante SIEMPRE primero
         const [c1, c2] = this._parseColors(book.color || 'linear-gradient(135deg,#222,#000)');
         const g = ctx.createLinearGradient(0, 0, 512, 768);
         g.addColorStop(0, c1); g.addColorStop(1, c2);
@@ -83,22 +82,18 @@ class FolioScene {
                 return response.blob();
             })
             .then(blob => {
-                // Creamos una URL local temporal a partir del Blob
                 const localUrl = URL.createObjectURL(blob);
                 const img = new Image();
                 img.onload = () => {
-                    // Si la imagen cargada es real (no un pixel transparente)
                     if (img.width > 10) {
                         ctx.drawImage(img, 0, 0, 512, 768);
                         tex.needsUpdate = true;
                     }
-                    // Liberamos memoria
                     URL.revokeObjectURL(localUrl);
                 };
                 img.src = localUrl;
             })
             .catch(err => {
-                // Si la descarga falla silenciosamente, se queda el Canvas elegante
                 console.log(`[INFO] No se pudo cargar portada para ${book.title}`);
             });
 
@@ -150,8 +145,6 @@ class FolioScene {
     }
 
     _books() {
-        // 4 libros distribuidos simétricamente alrededor del eje vertical.
-        // Pares espejo: extremos arriba (y=0.7), centro abajo (y=-0.7) — efecto V invertida.
         const positions = [
             { x: -3.3, y:  0.7, z: 0.1 },  // Extremo izquierdo
             { x: -1.1, y: -0.7, z: 0.6 },  // Centro-izquierda
@@ -176,10 +169,8 @@ class FolioScene {
 
     // Método para reconstruir los libros cuando llegan los datos de Supabase
     updateBooks() {
-        // Borramos los libros falsos anteriores
         this.bookMeshes.forEach(b => this.scene.remove(b.group));
         this.bookMeshes = [];
-        // Volvemos a crear los libros, pero ahora con la variable BOOKS que ya tiene los ISBN reales
         this._books();
     }
 
