@@ -3,7 +3,6 @@
 // 1. Cargar variables de entorno asegurando la ruta exacta
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 
-// DIAGNÓSTICO RÁPIDO PARA LA TERMINAL
 const dbUrl = process.env.DATABASE_URL;
 console.log('\n--- DIAGNÓSTICO DE CONEXIÓN ---');
 console.log(dbUrl ? `✅ DATABASE_URL detectada: ${dbUrl.substring(0, 35)}...` : '❌ ERROR: DATABASE_URL no encontrada en el .env');
@@ -22,7 +21,6 @@ const app  = express();
 app.use(cors());
 app.use(express.json({ limit: '2mb' }));
 
-// Servimos el frontend estático desde la raíz del proyecto
 const ROOT = path.join(__dirname, '..');
 app.use(express.static(ROOT));
 
